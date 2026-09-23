@@ -1,0 +1,17 @@
+---
+title: "Join: Kode Room"
+description: "Rute yang me-redirect ke waiting room pemain."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/join/[roomCode]/page.tsx
+
+```tsx
+import { redirect } from "next/navigation"
+
+export default function JoinRoomRedirectPage({ params }: { params: { roomCode: string } }) {
+  // Redirect to the main join page with the room code as a query parameter
+  redirect(`/join?room=${params.roomCode}`)
+}
+```

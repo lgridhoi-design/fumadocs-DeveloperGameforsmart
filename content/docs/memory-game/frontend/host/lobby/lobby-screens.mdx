@@ -1,0 +1,138 @@
+---
+title: "LobbyScreens"
+description: "Layar status dan konten utama lobby host."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/[roomCode]/lobby/components/lobby-screens.tsx
+
+```tsx
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { CountdownTimer } from "@/components/game/countdown-timer"
+import { PixelBackgroundElements } from "@/components/layout/pixel-background-elements"
+import type { Room } from "@/lib/room-manager"
+
+interface LobbyScreensProps {
+  t: (key: string, opts?: any) => string
+  onBackToSelect: () => void
+  room: Room | null
+  hostId: string | null
+  isHost: boolean
+  onCountdownComplete: () => void
+}
+
+export function LobbyScreens({ t, onBackToSelect, room, hostId, isHost, onCountdownComplete }: LobbyScreensProps) {
+  return null
+}
+
+interface RedirectingScreenProps {
+  t: (key: string, opts?: any) => string
+}
+
+export function RedirectingScreen({ t }: RedirectingScreenProps) {
+  return (
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+      <div className="relative z-10 text-center">
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 bg-linear-to-br from-blue-600 to-cyan-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+          <div className="relative bg-linear-to-br from-blue-500 to-cyan-500 rounded-lg border-4 border-black shadow-2xl p-6">
+            <div className="w-16 h-16 mx-auto bg-white border-2 border-black rounded flex items-center justify-center mb-4">
+              <div className="h-8 w-8 text-black animate-spin">⏳</div>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 pixel-font">{t('lobby.redirecting')}</h3>
+            <p className="text-white/80 pixel-font-sm">{t('lobby.goingToMonitor')}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface SimpleStatusScreenProps {
+  t: (key: string, opts?: any) => string
+}
+
+export function LoadingScreen({ t }: SimpleStatusScreenProps) {
+  return (
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="text-center text-white">
+        <div className="text-xl">{t('lobby.loadingRoom')}</div>
+      </div>
+    </div>
+  )
+}
+
+export function InitializingScreen({ t }: SimpleStatusScreenProps) {
+  return (
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="text-center text-white">
+        <div className="text-xl">{t('lobby.initializing')}</div>
+      </div>
+    </div>
+  )
+}
+
+interface RoomNotFoundScreenProps {
+  t: (key: string, opts?: any) => string
+  onBackToSelect: () => void
+}
+
+export function RoomNotFoundScreen({ t, onBackToSelect }: RoomNotFoundScreenProps) {
+  return (
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+      <div className="absolute inset-0 opacity-20">
+        <div className="pixel-grid"></div>
+      </div>
+      <div className="absolute inset-0 opacity-10">
+        <div className="scanlines"></div>
+      </div>
+      <div className="absolute inset-0 overflow-hidden">
+        <PixelBackgroundElements />
+      </div>
+
+      <div className="relative z-10 text-center">
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 bg-linear-to-br from-red-600 to-red-700 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+          <div className="relative bg-linear-to-br from-red-500 to-red-600 rounded-lg border-4 border-black shadow-2xl p-6">
+            <div className="w-16 h-16 mx-auto bg-white border-2 border-black rounded flex items-center justify-center mb-4">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 pixel-font">{t('lobby.roomNotFound', { defaultValue: 'ROOM NOT FOUND' })}</h3>
+            <p className="text-white/80 mb-4 pixel-font-sm">{t('lobby.roomNotFoundDesc')}</p>
+            <div className="relative pixel-button-container">
+              <div className="absolute inset-0 bg-linear-to-br from-orange-600 to-orange-700 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+              <Button
+                onClick={onBackToSelect}
+                className="relative bg-linear-to-br from-orange-500 to-orange-600 border-2 border-black rounded-lg text-white hover:bg-linear-to-br hover:from-orange-400 hover:to-orange-500 transform hover:scale-105 transition-all duration-200 font-bold"
+              >
+                <span className="pixel-font-sm">{t('lobby.createNewRoom')}</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface LobbyCountdownProps {
+  room: Room | null
+  hostId: string | null
+  onCountdownComplete: () => void
+}
+
+export function LobbyCountdown({ room, hostId, onCountdownComplete }: LobbyCountdownProps) {
+  if (!room) return null
+  return (
+    <CountdownTimer
+      room={room}
+      playerId={hostId || undefined}
+      isHost={true}
+      onCountdownComplete={onCountdownComplete}
+    />
+  )
+}
+```

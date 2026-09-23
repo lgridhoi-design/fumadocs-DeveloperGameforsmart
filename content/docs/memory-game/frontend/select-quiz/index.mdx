@@ -1,0 +1,25 @@
+---
+title: "Select Quiz"
+description: "Halaman pemilihan quiz — pencarian, filter kategori & bahasa, pagination adaptif, favorites, dan dialog detail kuis."
+---
+
+#### app/select-quiz/page.tsx
+
+```tsx
+import SelectQuizContent from "./SelectQuizContent"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Select Quiz",
+  description: "Browse and select from hundreds of educational and fun quizzes.",
+}
+
+// SSR: No pre-fetch — client handles fetching after auto-lang-sync
+export default async function SelectQuizPage() {
+  return (
+    <>
+      <SelectQuizContent />
+    </>
+  )
+}
+```

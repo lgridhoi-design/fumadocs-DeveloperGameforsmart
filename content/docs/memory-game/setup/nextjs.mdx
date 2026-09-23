@@ -1,0 +1,135 @@
+---
+title: Instalasi Next.js
+description: Membuat project Next.js 14 dari nol — scaffold, versi, TypeScript, path alias, dan dev server di port 3002.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Instalasi Next.js
+
+Langkah pertama: scaffold project dengan **Next.js 14** (App Router), TypeScript, dan tanpa folder `src/` (semua kode langsung di root). Ini mengikuti `package.json` dan `tsconfig.json` di proyek asli.
+
+---
+
+## 1. Create Project
+
+```bash
+npx create-next-app@14 memory-game \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --no-src-dir \
+  --import-alias "@/*"
+```
+
+| Flag | Alasan |
+| --- | --- |
+| `@14` | Pin ke Next.js 14 (proyek asli: **14.2.16**) — penting untuk kompatibilitas `@supabase/ssr`. |
+| `--typescript` | Seluruh kode proyek memakai `.ts` / `.tsx`. |
+| `--tailwind` | Sudah menyertakan Tailwind (akan kita ganti ke **Tailwind v4** di halaman [Tailwind](/docs/memory-game/setup/tailwind)). |
+| `--no-src-dir` | Struktur dari proyek asli menaruh `app/`, `components/`, `lib/` di **root**, bukan di `src/`. |
+| `--import-alias "@/*"` | Semua import memakai alias `@/...` → mengarah ke root. |
+
+<Callout title="Hasilnya">
+Struktur awal yang terbentuk: `app/`, `public/`, `package.json`, `next.config.mjs`, `tsconfig.json`, `postcss.config.mjs`, `.gitignore`. Folder `app/` ini nanti kita isi routing di bab [Frontend](/docs/memory-game/frontend).
+</Callout>
+
+---
+
+## 2. Versi & Package Kunci
+
+Poin paling sering menyebabkan error: **React harus versi 18**, bukan 19.
+
+```bash
+npm install next@14.2.16 react@^18 react-dom@^18
+```
+
+Sebagian besar dependency lain dipasang bertahap. Yang paling inti untuk alur game:
+
+```bash
+# Supabase (auth + database)
+npm install @supabase/supabase-js @supabase/ssr
+
+# State & utility
+npm install zod sonner lucide-react framer-motion
+
+# Multiplayer / QR
+npm install qrcode.react html5-qrcode
+```
+
+Package lain (`next-pwa`, `i18next`, `react-i18next`, `i18next-browser-languagedetector`, `next-themes`, `geist`, `@hookform/resolvers`, `react-hook-form`, dll.) dipasang sesuai kebutuhan di bab masing-masing ([Frontend](/docs/memory-game/frontend), [Login](/docs/memory-game/login)). Lihat daftar lengkap dependensi asli di `gfs/Memory-Game/package.json`.
+
+---
+
+## 3. Script npm — Port 3002
+
+Proyek asli memakai port **3002** untuk dev dan production:
+
+```json
+{
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3002",
+    "start": "next start -p 3002"
+  }
+}
+```
+
+Dengan ini, `http://localhost:3002` menjadi base URL lokal — nilai ini juga dipakai `NEXT_PUBLIC_SITE_URL` di [Supabase setup](/docs/memory-game/setup/supabase).
+
+---
+
+## 4. TypeScript & Path Alias
+
+`tsconfig.json` hasil scaffold sudah benar jika `paths` mengarah ke root (`@/*` → `./*`):
+
+```json
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "strict": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+Alias `@/` inilah yang dipakai seluruh import misal `import { Card } from "@/components/ui/card"`.
+
+---
+
+## 5. eslint / typescript di build
+
+Karena proyek asli mengutamakan kecepatan release, dua penutup ini dimatikan di `next.config.mjs` (opsional, tapi dipakai di proyek asli):
+
+```js
+const nextConfig = {
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
+}
+```
+
+<Callout title="Catatan">
+Untuk development lokal, biarkan `tsc` aktif lewat editor (mis. VSCode) agar error type tetap terlihat — `ignoreBuildErrors` hanya menunda kegagalan build, bukan menghilangkan bug.
+</Callout>
+
+---
+
+## Verify
+
+```bash
+npm run dev
+# → http://localhost:3002
+```
+
+Jika halaman default muncul, lanjut ke [Tailwind CSS & Styling](/docs/memory-game/setup/tailwind).

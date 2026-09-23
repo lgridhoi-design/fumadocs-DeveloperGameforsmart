@@ -1,0 +1,160 @@
+---
+title: Struktur Folder
+description: Peta lengkap direktori proyek — app/, components/, lib/, hooks/, locales/, dan pola organisasi per halaman.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Struktur Folder
+
+Setelah toolchain beres, kita perlu tahu **di mana setiap kode diletakkan**. Struktur ini mengikuti aturan App Router + kebiasaan organizer proyek asli: komponen besar dipecah per fungsi, dan setiap halaman kompleks punya folder `components/` sendiri.
+
+---
+
+## Pohon Direktori
+
+```
+memory-game/
+├── app/                     # Routing & halaman (App Router)
+│   ├── layout.tsx           # Root layout: metadata, fonts, providers
+│   ├── globals.css          # Tailwind v4, tema, animasi pixel
+│   ├── page.tsx             # Home: pilih Host atau Player
+│   ├── auth/callback/       # Redirect dari Google OAuth
+│   ├── login/               # Login Google + email/password
+│   ├── select-quiz/         # Host memilih & mencari quiz
+│   │   ├── page.tsx
+│   │   ├── SelectQuizContent.tsx
+│   │   └── components/      # quiz-card, quiz-filter-bar, pagination, …
+│   ├── quiz-settings/       # Atur jumlah soal, waktu, mode game
+│   │   ├── page.tsx
+│   │   └── components/      # settings-card, time-limit-select, …
+│   ├── host/
+│   │   ├── [roomCode]/      # Sub-route host (dengan [roomCode] dinamis)
+│   │   │   ├── page.tsx     # re-export → lobby/page
+│   │   │   ├── lobby/       # Daftar player + share room
+│   │   │   └── monitor/     # Progres player & timer
+│   │   └── leaderboard/     # Ranking akhir host
+│   ├── join/                # Player masukkan kode room + nickname
+│   │   ├── page.tsx
+│   │   ├── [roomCode]/      # Join langsung lewat URL
+│   │   └── components/      # join-card, room-code, access-denied-modal, …
+│   ├── player/
+│   │   └── [roomCode]/      # Area pemain
+│   │       ├── waiting/     # Ruang tunggu sebelum mulai
+│   │       ├── quiz/        # Menjawab kuis
+│   │       ├── game/
+│   │       │   ├── countdown/          # Hitung mundur 10 detik
+│   │       │   └── memory-challenge/   # Mini game kartu memori
+│   │       └── result/      # Hasil akhir pemain
+│   └── api/                 # Route Handlers (server-only logic)
+│       └── rooms/[roomCode]/join, heartbeat, countdown-state
+├── components/              # Komponen React yang dipakai ulang
+│   ├── ui/                  # Komponen shadcn (button, card, dialog…)
+│   ├── layout/              # page-title, game-background, page-corner-logos
+│   ├── game/                # memory-game, countdown-timer
+│   ├── player/              # Grid avatar player, nama player
+│   ├── join/                # QR scanner, avatar selector
+│   ├── guards/              # fullscreen-guard (wajib fullscreen)
+│   ├── branding/            # Logo MemoryQuiz / GameForSmart
+│   ├── feedback/            # Toast & notifikasi
+│   ├── home/                # Elemen landing page
+│   └── providers/           # i18n-initializer, rtl-provider
+├── contexts/
+│   └── AuthContext.tsx       # State autentikasi global (login/logout)
+├── hooks/                    # Hook custom: use-room, use-quiz, dll.
+├── lib/                      # Helper non-UI + client Supabase (sumber "backend")
+├── locale/                   # Terjemahan i18next (en/id/ar + folder rtl)
+├── public/                   # Aset statis
+│   ├── font/                 # PressStart2P.ttf, LPMQ_IsepMisbah.ttf
+│   ├── memogame/             # Gambar kartu memori (*.webp)
+│   ├── avatars/              # Avatar player (ava1..ava16)
+│   ├── images/ flag/ audio/  # OG image, bendera, suara
+│   └── sw.js + manifest      # Output PWA (di-generate saat build)
+└── .env.local                # Kredensial (tidak di-git)
+```
+
+> Skema SQL (tabel `sessions`, `participants`, `quizzes` + Realtime + RLS) tidak disimpan sebagai file — dijalankan langsung dari **SQL Editor Supabase**, lihat [Setup → Supabase & Environment](/docs/memory-game/setup/supabase) dan [Database](/docs/memory-game/database).
+
+---
+
+## `app/` — Routing
+
+Setiap folder route minimal punya `page.tsx`. Saat halaman makin besar, komponen khusus diletakkan di `components/` di dalam folder tersebut:
+
+```
+app/player/[roomCode]/result/
+├── page.tsx
+└── components/
+    ├── player-result-card.tsx
+    └── result-screens.tsx
+```
+
+- **Route dinamis** memakai kurung siku `[roomCode]` — dibaca dari `params` di server component. Contoh sumber: `app/host/[roomCode]/lobby/page.tsx`, `app/join/[roomCode]/page.tsx`, `app/player/[roomCode]/quiz/page.tsx`.
+- **`app/api/`** berisi Route Handlers (`route.ts`) — satu-satunya tempat logic server. Di tutorial ini hanya ada 3: `rooms/[roomCode]/join`, `rooms/[roomCode]/heartbeat`, `rooms/[roomCode]/countdown-state` (lihat bab [Backend](/docs/memory-game/backend)).
+- Halaman `host/[roomCode]/page.tsx` **hanya me-re-export** ke `./lobby/page` — diperlukan agar routing Next.js aktif.
+- Layout nested bisa diperluas: `app/player/[roomCode]` bisa punya `layout.tsx` sendiri kalau perlu header/shell bersama.
+
+---
+
+## `components/` — Organisasi per Fungsi
+
+| Folder | Isi |
+| --- | --- |
+| `ui/` | shadcn components (button, card, dialog, dst.) |
+| `layout/` | `page-title.tsx`, `game-background.tsx`, `page-corner-logos.tsx` |
+| `game/` | `memory-game.tsx` (inti mini game), `countdown-timer.tsx` |
+| `player/` | Grid & daftar pemain (dipakai host/player) |
+| `join/` | `avatar-selector.tsx`, `qr-scanner.tsx` |
+| `guards/` | `fullscreen-guard.tsx` — wajib fullscreen sebelum masuk game |
+| `providers/` | `i18n-initializer`, `rtl-provider` (RTL saat bahasa Arab) |
+| `branding/` `feedback/` `home/` | Logo, toast/notifikasi, elemen landing |
+
+Selain folder-folder di atas, setiap halaman kompleks punya `components/` **di dalam foldernya sendiri** (mis. `app/host/[roomCode]/lobby/components/`).
+
+<Callout title="Aturan tidak tertulis">
+Komponen yang dipakai >1 halaman → naik ke `components/` (sesuai kategori). Komponen yang hanya dipakai 1 halaman → taruh di folder `components/` milik halaman tersebut. Ini menjaga `components/` tetap bersih di proyek sebesar ini.
+</Callout>
+
+---
+
+## `lib/` — "Backend" yang Sebenarnya
+
+Seluruh logic game & akses database terkonsentrasi di `lib/` (client-side, dipakai antar halaman):
+
+| File | Fungsi |
+| --- | --- |
+| `supabase.ts` | Client browser + `quizApi` + `isSupabaseConfigured()` |
+| `supabase-server.ts` | Client server (dipakai Route Handler di `app/api`) |
+| `room-manager.ts` | Helper room: join/keluar, update status, mark player finished |
+| `supabase-session-manager.ts` | Baca/tulis data sesi (player/host) di storage |
+| `game-session.ts` | Resolusi sesi game & URL statistik (`STATS_BASE_URL`) |
+| `player-quiz-progress.ts` | Hitung progres soal & urutkan leaderboard |
+| `quiz-memory-flow.ts` | Kapan mini game memory muncul |
+| `score-update-queue.ts` | Antrian update skor (anti rate-limit) |
+| `server-time.ts` / `timer-utils.ts` | Waktu sinkron lintas device |
+| `utils.ts` | `cn()` dari shadcn |
+
+Detail masing-masing di bab [Frontend — Pola Umum](/docs/memory-game/frontend) dan [Backend](/docs/memory-game/backend).
+
+---
+
+## `hooks/`, `contexts/`, `locale/`
+
+- **`hooks/`** — hook custom yang membungkus logika berulang: `use-room` (subscribe status room realtime), `use-quiz` (fetch daftar quiz), `use-synchronized-timer`, `use-directional-icon`.
+- **`contexts/AuthContext.tsx`** — state `user` global (login state) dibagikan ke seluruh app.
+- **`locale/`** — file JSON terjemahan i18next: `en.json`, `id.json`, `ar.json` + folder `rtl/` untuk arah teks kanan-ke-kiri.
+
+---
+
+## `public/` — Aset & Build PWA
+
+- Font & gambar kartu memori adalah **konten game** (di-render langsung via `<img>` atau CSS `background-image`).
+- `sw.js`, `workbox-*.js`, `web-app-manifest-*.png` **bukan ditulis manual** — dihasilkan `next-pwa` saat `npm run build`. Jangan dihapus dari git bila menjadi output rutin (lih. [Deploy](/docs/memory-game/deploy)).
+
+<Callout title="Tips">
+Gunakan gambar kartu memori berformat `.webp` dan ukuran kecil (mis. ~512px) karena dirender berulang dalam matrix kartu; hindari ukuran file besar agar animasi flip tetap 60fps.
+</Callout>
+
+---
+
+Struktur lengkap sudah siap. Berikutnya tinggal mengisi logikanya: [Frontend](/docs/memory-game/frontend) → [Database](/docs/memory-game/database) → [Backend](/docs/memory-game/backend) → [Login](/docs/memory-game/login) → [Deploy](/docs/memory-game/deploy).

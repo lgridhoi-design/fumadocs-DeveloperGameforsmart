@@ -1,0 +1,136 @@
+---
+title: "FloatingActionButtons"
+description: "Tombol aksi mengambang RESTART / KELUAR."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/leaderboard/components/floating-action-buttons.tsx
+
+```tsx
+"use client"
+
+import { createPortal } from "react-dom"
+import { Home, RotateCw, BarChart3 } from "lucide-react"
+
+interface FloatingActionButtonsProps {
+  restartDisabled: boolean
+  showHomeTooltip: boolean
+  showStatTooltip: boolean
+  showRestartTooltip: boolean
+  onHome: () => void
+  onRestart: () => void
+  onStats: () => void
+  onHomeTooltip: (show: boolean) => void
+  onStatTooltip: (show: boolean) => void
+  onRestartTooltip: (show: boolean) => void
+}
+
+export function FloatingActionButtons({
+  restartDisabled,
+  showHomeTooltip,
+  showStatTooltip,
+  showRestartTooltip,
+  onHome,
+  onRestart,
+  onStats,
+  onHomeTooltip,
+  onStatTooltip,
+  onRestartTooltip,
+}: FloatingActionButtonsProps) {
+  if (typeof window === 'undefined') return null
+
+  return (
+    <>
+      {/* Desktop left: Home + Restart */}
+      {createPortal(
+        <div className="hidden lg:flex fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-[99999] flex-col gap-3 sm:gap-4">
+          <div className="relative group">
+            <button
+              onClick={onHome}
+              onMouseEnter={() => onHomeTooltip(true)}
+              onMouseLeave={() => onHomeTooltip(false)}
+              className="flex h-8 w-8 items-center justify-center transition-all hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 sm:h-11 sm:w-11 md:h-12 md:w-12"
+              style={{ background: '#8b5cf6', border: '2px solid black', borderRadius: '0px', boxShadow: `3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)`, imageRendering: 'pixelated' }}
+            >
+              <Home className="h-3.5 w-3.5 text-white transition-transform duration-300 group-hover:rotate-12 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+            </button>
+            {showHomeTooltip && (
+              <div className="absolute left-full ml-2 sm:ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                <div className="relative bg-black text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-white/20 shadow-lg">
+                  Beranda
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-black"></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative group">
+            <button
+              onClick={onRestart}
+              onMouseEnter={() => onRestartTooltip(true)}
+              onMouseLeave={() => onRestartTooltip(false)}
+              disabled={restartDisabled}
+              className="flex h-8 w-8 items-center justify-center transition-all hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-11 md:h-12 md:w-12"
+              style={{ background: '#06b6d4', border: '2px solid black', borderRadius: '0px', boxShadow: `3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)`, imageRendering: 'pixelated' }}
+            >
+              <RotateCw className="h-3.5 w-3.5 text-white transition-transform duration-300 group-hover:rotate-180 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+            </button>
+            {showRestartTooltip && (
+              <div className="absolute left-full ml-2 sm:ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                <div className="relative bg-black text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-white/20 shadow-lg">
+                  Mulai Ulang
+                  <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-black"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Desktop right: Statistics */}
+      {createPortal(
+        <div className="hidden lg:block fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-[99999]">
+          <div className="relative group">
+            <button
+              onClick={onStats}
+              onMouseEnter={() => onStatTooltip(true)}
+              onMouseLeave={() => onStatTooltip(false)}
+              className="flex h-8 w-8 items-center justify-center transition-all hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 sm:h-11 sm:w-11 md:h-12 md:w-12"
+              style={{ background: '#ec4899', border: '2px solid black', borderRadius: '0px', boxShadow: `3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)`, imageRendering: 'pixelated' }}
+            >
+              <BarChart3 className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4 md:h-5 md:w-5" />
+            </button>
+            {showStatTooltip && (
+              <div className="absolute right-full mr-2 sm:mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                <div className="relative bg-black text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-white/20 shadow-lg">
+                  Statistik
+                  <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Mobile/Tab bottom bar */}
+      {createPortal(
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[99999] flex lg:hidden items-center gap-3 bg-slate-950/80 border-2 border-black p-2.5 px-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] backdrop-blur-md" style={{ borderRadius: '0px' }}>
+          <button onClick={onHome} className="w-10 h-10 flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 transition-all" style={{ background: '#8b5cf6', border: '2px solid black', borderRadius: '0px', boxShadow: `2px 2px 0px black, inset -1px -1px 0px rgba(0,0,0,0.2)` }} aria-label="Home">
+            <Home className="h-4 w-4 text-white" />
+          </button>
+          <button onClick={onRestart} disabled={restartDisabled} className="w-10 h-10 flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50 transition-all" style={{ background: '#06b6d4', border: '2px solid black', borderRadius: '0px', boxShadow: `2px 2px 0px black, inset -1px -1px 0px rgba(0,0,0,0.2)` }} aria-label="Restart">
+            <RotateCw className="h-4 w-4 text-white" />
+          </button>
+          <button onClick={onStats} className="w-10 h-10 flex items-center justify-center active:translate-x-0.5 active:translate-y-0.5 transition-all" style={{ background: '#ec4899', border: '2px solid black', borderRadius: '0px', boxShadow: `2px 2px 0px black, inset -1px -1px 0px rgba(0,0,0,0.2)` }} aria-label="Statistics">
+            <BarChart3 className="h-4 w-4 text-white" />
+          </button>
+        </div>,
+        document.body
+      )}
+    </>
+  )
+}
+```

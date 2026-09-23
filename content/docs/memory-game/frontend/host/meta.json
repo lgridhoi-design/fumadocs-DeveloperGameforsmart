@@ -1,0 +1,9 @@
+{
+  "title": "Host",
+  "pages": [
+    "index",
+    "lobby",
+    "monitor",
+    "leaderboard"
+  ]
+}

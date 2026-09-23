@@ -1,0 +1,269 @@
+---
+title: "useResultData"
+description: "Hook pengambilan data hasil pemain."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/use-result-data.ts
+
+```ts
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { roomManager } from "@/lib/room-manager"
+import { supabase } from "@/lib/supabase"
+import { isPlayersSupabaseConfigured, supabasePlayers } from "@/lib/supabase-players"
+import { sortPlayersForLeaderboard } from "@/lib/player-quiz-progress"
+import { openPlayerStatistics } from "@/lib/player-stats"
+import { exitFullscreen } from "@/lib/fullscreen-utils"
+import type { Player, Room, PlayerRanking } from "./types"
+import {
+  resolvePlayerForResult,
+  buildResultRanking,
+  readLocalResultData,
+  clearLocalResultData,
+} from "./player-result-logic"
+
+export function useResultData(roomCode: string, isTryOut: boolean) {
+  const router = useRouter()
+  const [room, setRoom] = useState<Room | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [playerRanking, setPlayerRanking] = useState<PlayerRanking | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [isOpeningStats, setIsOpeningStats] = useState(false)
+
+  useEffect(() => {
+    exitFullscreen().catch(() => {})
+  }, [])
+
+  const fetchRoom = useCallback(async (attempt = 1, maxAttempts = 5) => {
+    try {
+      if (!roomCode) {
+        setError('Kode room tidak ditemukan')
+        return
+      }
+
+      const roomData = await roomManager.getRoom(roomCode)
+
+      if (roomData) {
+        setRoom(roomData)
+
+        const player = await resolvePlayerForResult(roomData, roomCode, isTryOut)
+
+        if (player) {
+          const allPlayers = isTryOut
+            ? [...roomData.players]
+            : roomData.players.filter(p => !p.isHost)
+
+          const { finishSnap, localProgress } = readLocalResultData(roomCode)
+          const result = buildResultRanking(allPlayers, roomData, player, finishSnap, localProgress)
+
+          if (result.status === "ranking") {
+            setError(null)
+            setPlayerRanking(result.ranking)
+            clearLocalResultData(roomCode, localProgress != null)
+            return
+          }
+
+          if (result.usedLocalFallback) {
+            return
+          }
+
+          if (attempt < maxAttempts) {
+            setError(`Menyinkronkan progres... (${attempt}/${maxAttempts})`)
+            setTimeout(() => fetchRoom(attempt + 1), 1500)
+          } else {
+            setError(roomData.status !== "finished" ? 'Menghitung peringkat...' : 'Data pemain tidak ditemukan')
+          }
+        } else {
+          setError('Tidak ada sesi pemain')
+        }
+      } else {
+        if (attempt < maxAttempts) {
+          setError(`Menghubungkan ke server... (${attempt}/${maxAttempts})`)
+          setTimeout(() => fetchRoom(attempt + 1), 1500)
+        } else {
+          setError('Room tidak ditemukan')
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching room:", error)
+      if (attempt < maxAttempts) {
+        setTimeout(() => fetchRoom(attempt + 1), 1000 * attempt)
+      } else {
+        setError('Gagal memuat data')
+      }
+    } finally {
+      if (attempt === 1) {
+        setLoading(false)
+      }
+    }
+  }, [roomCode, isTryOut])
+
+  useEffect(() => {
+    if (!roomCode) {
+      console.error('[ResultPage] roomCode tidak ditemukan di URL params')
+      router.push("/")
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    const startSubscription = async () => {
+      try {
+        await fetchRoom()
+
+        const unsub = await roomManager.subscribe(roomCode, (updatedRoom) => {
+          if (updatedRoom) {
+            setRoom(updatedRoom)
+
+            let player = null
+            if (typeof window !== 'undefined') {
+              const playerData = localStorage.getItem("currentPlayer")
+              if (playerData) {
+                player = JSON.parse(playerData)
+              }
+            }
+
+            if (player) {
+              const allPlayers = updatedRoom.players.filter(p => !p.isHost)
+
+              const sortedPlayers = sortPlayersForLeaderboard(allPlayers, updatedRoom)
+
+              const playerIndex = sortedPlayers.findIndex(p =>
+                p.id === player.id ||
+                (p.nickname && player.nickname && p.nickname.trim().toLowerCase() === player.nickname.trim().toLowerCase())
+              )
+
+              if (playerIndex !== -1) {
+                const playerObj = sortedPlayers[playerIndex]
+
+                setPlayerRanking({
+                  rank: playerIndex + 1,
+                  totalScore: playerObj.quizScore ?? 0,
+                  player: playerObj,
+                })
+              }
+            }
+          }
+        })
+        unsubscribe = unsub
+      } catch (err) {
+        console.error("[ResultPage] Subscription failed:", err)
+      }
+    }
+
+    startSubscription()
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
+  }, [roomCode, fetchRoom, retryCount, router])
+
+  useEffect(() => {
+    if (!roomCode) return
+
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase
+    const channel = client.channel(`game-end-${roomCode}`)
+
+    channel
+      .on('broadcast', { event: 'game-ended' }, () => {
+        fetchRoom()
+      })
+      .subscribe()
+
+    return () => {
+      client.removeChannel(channel)
+    }
+  }, [roomCode, fetchRoom])
+
+  useEffect(() => {
+    let activePlayerId: string | null = null
+    let activePlayerName = ""
+    try {
+      if (typeof window !== 'undefined') {
+        if (isTryOut) {
+          const rawHost = localStorage.getItem('currentHost')
+          if (rawHost) {
+            const hostInfo = JSON.parse(rawHost)
+            activePlayerId = hostInfo.hostId
+            activePlayerName = 'Host'
+          }
+        } else {
+          const cp = localStorage.getItem('currentPlayer')
+          if (cp) {
+            const parsed = JSON.parse(cp)
+            activePlayerId = parsed.id
+            activePlayerName = parsed.nickname
+          }
+        }
+      }
+    } catch (e) { }
+
+    if (!activePlayerId || !roomCode) return
+
+    const sendPhaseUpdate = () => {
+      try {
+        const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase
+        const broadcastChannel = client.channel(`progress-${roomCode}`)
+        broadcastChannel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            broadcastChannel.send({
+              type: 'broadcast',
+              event: 'progress-update',
+              payload: {
+                playerId: activePlayerId,
+                updateData: {
+                  nickname: activePlayerName,
+                  phase: "FINISHED"
+                },
+                timestamp: Date.now()
+              }
+            }).catch(e => console.error('[Result] Error sending phase broadcast:', e))
+              .finally(() => {
+                client.removeChannel(broadcastChannel)
+              })
+          }
+        })
+      } catch (e) {
+        console.error('[Result] Phase broadcast fail error:', e)
+      }
+    }
+
+    sendPhaseUpdate()
+  }, [roomCode, isTryOut])
+
+  const openStatistics = useCallback(async () => {
+    if (isOpeningStats) return
+    setIsOpeningStats(true)
+    try {
+      await openPlayerStatistics(roomCode)
+    } catch (e) {
+      console.warn("[ResultPage] Failed to open statistics:", e)
+    } finally {
+      setIsOpeningStats(false)
+    }
+  }, [isOpeningStats, roomCode])
+
+  const retry = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    setRetryCount(prev => prev + 1)
+  }, [])
+
+  return {
+    room,
+    loading,
+    error,
+    playerRanking,
+    isOpeningStats,
+    retry,
+    openStatistics,
+  }
+}
+```

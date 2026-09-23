@@ -1,0 +1,409 @@
+---
+title: "Host: Monitor"
+description: "Kode lengkap frontend halaman monitor host aplikasi Memory Game."
+---
+
+#### app/host/[roomCode]/monitor/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, Suspense, useRef, useCallback } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { useRoom } from "@/hooks/use-room"
+import { roomManager } from "@/lib/room-manager"
+import { useSynchronizedTimer } from "@/hooks/use-synchronized-timer"
+import { sessionManager } from "@/lib/supabase-session-manager"
+
+import { supabasePlayers, isPlayersSupabaseConfigured } from "@/lib/supabase-players"
+import { supabase } from "@/lib/supabase"
+import { getAnsweredQuestionCount, getTotalQuestions, hasCompletedAllQuizQuestions, sortPlayersForLeaderboard } from "@/lib/player-quiz-progress"
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import { FullscreenButton } from "@/components/guards/fullscreen-button"
+import { PageTitle } from '@/components/layout/page-title'
+import { GameBackground } from "@/components/layout/game-background"
+import { MonitorLoadingScreen } from "./components/monitor-loading-screen"
+import { MonitorHeader } from "./components/monitor-header"
+import { TimeWarning } from "./components/time-warning"
+import { PlayerProgressGrid } from "./components/player-progress-grid"
+
+function MonitorPageContent() {
+  const params = useParams()
+  const router = useRouter()
+
+  const [roomCode, setRoomCode] = useState<string | null>(null)
+  const [viewportWidth, setViewportWidth] = useState(0)
+  const previousRankingsRef = useRef<{ [key: string]: number }>({})
+  const [rankingChanges, setRankingChanges] = useState<{ [key: string]: "up" | "down" | null }>({})
+  const [forceRefresh, setForceRefresh] = useState(0)
+  const [showTimeWarning, setShowTimeWarning] = useState(false)
+  const [timeUpHandled, setTimeUpHandled] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
+  const [isEndingGame, setIsEndingGame] = useState(false)
+  const [isHost, setIsHost] = useState(false)
+  const [isHostDetected, setIsHostDetected] = useState(false)
+  const [lastVerifiedCompletion, setLastVerifiedCompletion] = useState(false)
+  const { room, loading } = useRoom(roomCode || "")
+
+  const finishInProgressRef = useRef(false)
+  const isRTL = false
+  const shouldCompactEndGameLabel = viewportWidth > 0 && viewportWidth < 380
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth)
+
+    updateViewportWidth()
+    window.addEventListener('resize', updateViewportWidth)
+
+    return () => window.removeEventListener('resize', updateViewportWidth)
+  }, [])
+
+  const finishGame = useCallback(async (reason: string) => {
+    if (!roomCode || finishInProgressRef.current) return
+    finishInProgressRef.current = true
+    setRedirecting(true)
+
+    console.log(`[Monitor] finishGame triggered: ${reason}`)
+
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase
+    const gameEndChannel = client.channel(`game-end-${roomCode}`)
+    gameEndChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        gameEndChannel.send({
+          type: 'broadcast',
+          event: 'game-ended',
+          payload: { roomCode, timestamp: Date.now() }
+        }).finally(() => {
+          try { client.removeChannel(gameEndChannel) } catch (e) { }
+        })
+      }
+    })
+
+    try {
+      await roomManager.updateGameStatus(roomCode, "finished")
+    } catch (error) {
+      console.error(`[Monitor] Error updating game status (${reason}):`, error)
+    }
+
+    const isTryOut = typeof window !== 'undefined' && localStorage.getItem(`gameMode-${roomCode}`) === 'tryout'
+    const redirectPath = isTryOut
+      ? `/player/${roomCode}/result?mode=tryout`
+      : `/host/leaderboard?roomCode=${roomCode}`
+    console.log(`[Monitor] Redirecting to ${isTryOut ? 'result (tryout)' : 'leaderboard'}: ${reason}`)
+    try {
+      router.replace(redirectPath)
+    } catch (error) {
+      console.error('[Monitor] Redirect error after finishGame:', error)
+    }
+  }, [roomCode, router])
+
+  const quizSettings = room ? {
+    timeLimit: room.settings.totalTimeLimit,
+    questionCount: room.settings.questionCount,
+  } : {
+    timeLimit: 30,
+    questionCount: 10,
+  }
+
+  const handleTimeUp = useCallback(async () => {
+    if (timeUpHandled || !roomCode) return
+    setTimeUpHandled(true)
+
+    console.log('[Monitor] Time up - ending game...')
+    void finishGame('timeUp')
+  }, [timeUpHandled, roomCode, finishGame])
+
+  const timerState = useSynchronizedTimer(room, quizSettings.timeLimit, handleTimeUp)
+
+  useEffect(() => {
+    if (room && room.status !== 'waiting' && room.status !== 'countdown' && timerState.remainingTime !== Number.MAX_SAFE_INTEGER && timerState.remainingTime <= 30 && timerState.remainingTime > 0) {
+      setShowTimeWarning(true)
+    } else {
+      setShowTimeWarning(false)
+    }
+  }, [timerState.remainingTime, room])
+
+  useEffect(() => {
+    if (room && room.status !== 'waiting' && room.status !== 'countdown' && timerState.remainingTime !== Number.MAX_SAFE_INTEGER && timerState.remainingTime <= 0 && !timeUpHandled) {
+      setShowTimeWarning(true)
+    }
+  }, [timerState.remainingTime, timeUpHandled, room])
+
+  useEffect(() => {
+    const roomCodeParam = typeof params?.roomCode === "string" ? params.roomCode : Array.isArray(params?.roomCode) ? params.roomCode[0] : null
+
+    const verifyHostAccess = async () => {
+      try {
+        const sessionId = sessionManager.getSessionIdFromStorage()
+        if (sessionId) {
+          try {
+            const sessionData = await sessionManager.getSessionData(sessionId)
+            if (sessionData &&
+              sessionData.user_type === 'host' &&
+              sessionData.room_code === roomCodeParam) {
+              setRoomCode(roomCodeParam)
+              setIsHost(true)
+              setIsHostDetected(true)
+              return
+            }
+          } catch (error) {
+            console.warn("Error verifying host session:", error)
+          }
+        }
+
+        if (typeof window !== 'undefined') {
+          const hostDataStr = localStorage.getItem("currentHost")
+          if (hostDataStr) {
+            try {
+              const hostData = JSON.parse(hostDataStr)
+              if (hostData.roomCode === roomCodeParam) {
+                setRoomCode(roomCodeParam)
+                setIsHost(hostData.isHost || true)
+                setIsHostDetected(true)
+                return
+              }
+            } catch (e) {
+              console.error("Error parsing host data", e)
+            }
+          }
+
+          const savedHostId = sessionStorage.getItem("currentHostId") || localStorage.getItem("currentHostId")
+
+          if (savedHostId && roomCodeParam) {
+            console.log(`[Monitor] Auto-healing host session for ${roomCodeParam} with hostId ${savedHostId}`)
+            setRoomCode(roomCodeParam)
+            setIsHost(true)
+            setIsHostDetected(true)
+            return
+          }
+        }
+
+        console.warn(`[Monitor] Unauthorized access attempt for room ${roomCodeParam}`)
+        if (roomCodeParam) {
+          router.push(`/join`)
+        } else {
+          router.push("/select-quiz")
+        }
+      } catch (error) {
+        console.error("Error in host verification:", error)
+        router.push("/select-quiz")
+      }
+    }
+
+    verifyHostAccess()
+  }, [params, router])
+
+  useEffect(() => {
+    if (!roomCode) return
+
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase
+    const broadcastChannel = client.channel(`progress-${roomCode}`)
+
+    broadcastChannel.on("broadcast", { event: "progress-update" }, (event) => {
+      const payload = event.payload
+      if (!payload?.playerId || !payload?.updateData) return
+
+      console.log("[Monitor] 📡 Received broadcast progress:", payload.playerId, payload.updateData)
+
+      if (redirecting) return
+
+      roomManager.updateLocalPlayerProgress(roomCode, payload.playerId, {
+        nickname: payload.updateData.nickname,
+        quizScore: payload.updateData.quizScore,
+        questionsAnswered: payload.updateData.questionsAnswered,
+        currentQuestion: payload.updateData.currentQuestion,
+        correctAnswers: payload.updateData.correctAnswers,
+        phase: payload.updateData.phase,
+      })
+
+      setForceRefresh((prev) => prev + 1)
+    })
+
+    broadcastChannel.subscribe((status) => {
+      console.log(`[Monitor] Broadcast channel progress-${roomCode} status:`, status)
+    })
+
+    return () => {
+      client.removeChannel(broadcastChannel)
+    }
+  }, [roomCode, redirecting])
+
+  useEffect(() => {
+    if (!roomCode || redirecting) return
+
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase;
+    const gameEndChannel = client.channel(`game-end-${roomCode}`)
+
+    gameEndChannel.on('broadcast', { event: 'game-ended' }, (event) => {
+      console.log('[Monitor] Received Supabase game-ended broadcast, redirecting to leaderboard')
+      setRedirecting(true)
+      setLastVerifiedCompletion(true)
+      router.push(`/host/leaderboard?roomCode=${roomCode}`)
+    }).subscribe()
+
+    return () => {
+      client.removeChannel(gameEndChannel)
+    }
+  }, [roomCode, redirecting])
+
+  useEffect(() => {
+    if (room) {
+      const players = room.players.filter((p) => !p.isHost)
+      const sortedPlayers = sortPlayersForLeaderboard(players, room)
+
+      const newRankings: { [key: string]: number } = {}
+      const changes: { [key: string]: "up" | "down" | null } = {}
+      const previousRankings = previousRankingsRef.current
+
+      sortedPlayers.forEach((player, index) => {
+        const newRank = index + 1
+        newRankings[player.id] = newRank
+        const oldRank = previousRankings[player.id]
+
+        if (oldRank && oldRank !== newRank) {
+          changes[player.id] = oldRank > newRank ? "up" : "down"
+        } else {
+          changes[player.id] = null
+        }
+      })
+
+      previousRankingsRef.current = newRankings
+      setRankingChanges(changes)
+
+      setTimeout(() => {
+        setRankingChanges({})
+      }, 3000)
+    }
+  }, [room, forceRefresh])
+
+  useEffect(() => {
+    if (room && isHost && isHostDetected && room.status === "finished" && !redirecting) {
+      setRedirecting(true)
+      router.replace(`/host/leaderboard?roomCode=${roomCode}`)
+    }
+  }, [room?.status, isHost, isHostDetected, redirecting, roomCode, router])
+
+  useEffect(() => {
+    if (room && isHost && isHostDetected && !redirecting && !lastVerifiedCompletion) {
+      const nonHostPlayers = room.players.filter(p => !p.isHost)
+      const totalQuestions = getTotalQuestions(room)
+
+      const allPlayersCompleted = nonHostPlayers.length > 0 && nonHostPlayers.every((player) =>
+        hasCompletedAllQuizQuestions(player, room)
+      )
+
+      if (allPlayersCompleted) {
+        console.log('[Monitor] 🏁 All players completed! Starting final sync...')
+        const verifyAndForceFinish = async () => {
+          if (!roomCode) return
+          try {
+            const verifiedRoom = await roomManager.getRoom(roomCode!)
+            if (verifiedRoom) {
+              const playersToForceFinish = verifiedRoom.players.filter(
+                (p) => !p.isHost && !hasCompletedAllQuizQuestions(p, verifiedRoom)
+              )
+              playersToForceFinish.forEach((player) => {
+                const currentScore = player.quizScore || 0
+                roomManager.markPlayerFinished(
+                  roomCode!,
+                  player.id,
+                  currentScore,
+                  getAnsweredQuestionCount(player),
+                  player.correctAnswers
+                ).catch(e => console.warn('[Monitor] Force finish failed:', e))
+              })
+            }
+
+            console.log('[Monitor] Finishing game immediately...')
+            void finishGame('allPlayersCompleted')
+          } catch (error) {
+            console.error('[Monitor] Error during force finish:', error)
+            void finishGame('allPlayersCompletedFallback')
+          }
+        }
+
+        setLastVerifiedCompletion(true)
+        setRedirecting(true)
+        verifyAndForceFinish()
+      }
+    }
+  }, [room, isHost, isHostDetected, redirecting, roomCode, forceRefresh, lastVerifiedCompletion, router])
+
+  const endGame = async () => {
+    if (!roomCode || isEndingGame) return
+    setIsEndingGame(true)
+
+    console.log('[Monitor] End game button clicked...')
+    void finishGame('manualEnd')
+  }
+
+  if (loading) return <MonitorLoadingScreen title="Memuat Monitor Host..." />
+
+  if (!room) return <MonitorLoadingScreen title="Memuat Room..." subtitle="Menghubungkan ke game" />
+
+  const players = room.players.filter((p) => !p.isHost)
+  const sortedPlayers = [
+    ...players.filter(p => hasCompletedAllQuizQuestions(p, room)).sort((a, b) => {
+      const aTime = (a.timeSpent && a.timeSpent > 0) ? a.timeSpent : 999999
+      const bTime = (b.timeSpent && b.timeSpent > 0) ? b.timeSpent : 999999
+      if (aTime !== bTime) return aTime - bTime
+      return (a.joinedAt ? Date.parse(a.joinedAt) : 0) - (b.joinedAt ? Date.parse(b.joinedAt) : 0)
+    }),
+    ...players.filter(p => !hasCompletedAllQuizQuestions(p, room)).sort((a, b) => {
+      const aAnswered = getAnsweredQuestionCount(a)
+      const bAnswered = getAnsweredQuestionCount(b)
+      if (bAnswered !== aAnswered) return bAnswered - aAnswered
+      return (a.joinedAt ? Date.parse(a.joinedAt) : 0) - (b.joinedAt ? Date.parse(b.joinedAt) : 0)
+    }),
+  ]
+
+  if (redirecting) {
+    return <MonitorLoadingScreen title="Game Berakhir" subtitle="Menyelesaikan skor..." />
+  }
+
+  return (
+    <>
+      <PageTitle title={`Monitor`} />
+
+      <GameBackground>
+        <PageCornerLogos memoryQuizNoLink />
+
+        <div className={`relative z-10 container mx-auto px-4 py-4 sm:py-8 ${pageCornerLogoContentPadding} flex-1 flex flex-col min-h-0`}>
+
+          <MonitorHeader
+            playerCount={players.length}
+            timerState={timerState}
+            showTimeWarning={showTimeWarning}
+            shouldCompactEndGameLabel={shouldCompactEndGameLabel}
+            isEndingGame={isEndingGame}
+            onEnd={endGame}
+          />
+
+          {showTimeWarning && <TimeWarning remainingTime={timerState.remainingTime} />}
+
+          <div className="flex-initial min-h-0 flex flex-col mb-4 sm:mb-6 lg:mb-8 max-h-full">
+            <div className="bg-linear-to-br from-blue-500/20 to-purple-500/20 border-2 sm:border-4 border-white/30 rounded-lg p-4 sm:p-6 pixel-lobby-card flex-initial min-h-0 flex flex-col max-h-full">
+              <PlayerProgressGrid
+                players={sortedPlayers as any}
+                room={room}
+              />
+            </div>
+          </div>
+        </div>
+
+        <FullscreenButton position="bottom-right" offsetX={16} offsetY={16} className="hidden lg:block" />
+      </GameBackground>
+    </>
+  )
+}
+
+export default function MonitorPage() {
+  return (
+    <Suspense fallback={<MonitorLoadingScreen title="Memuat..." />}>
+      <MonitorPageContent />
+    </Suspense>
+  )
+}
+```

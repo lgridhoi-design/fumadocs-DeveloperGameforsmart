@@ -1,0 +1,57 @@
+---
+title: Pengantar Setup
+description: Prasyarat dan alur besar fase Setup — dari lingkungan kosong sampai proyek Next.js siap menerima kode game.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Pengantar Setup
+
+Bab ini (dan halaman `Setup/*` di bawahnya) menjelaskan **persiapan proyek dari nol** sebelum satu baris logika game ditulis. Semua angka, daftar package, dan berkas konfigurasi diambil langsung dari `gfs/Memory-Game`.
+
+Tujuan akhir fase Setup: terminal bisa menjalankan `npm run dev`, proyek tampil di `http://localhost:3002`, `.env.local` terisi kredensial, dan **dua** database Supabase sudah punya skema lengkap.
+
+---
+
+## Alur Setup
+
+```
+1. Instalasi Next.js      → scaffold TypeScript + App Router (tanpa src/)
+2. Tailwind CSS & styling → Tailwind v4 + shadcn/ui + font + tema
+3. Supabase & .env        → 2 project, kredensial, skema SQL
+4. Struktur folder        → layout direktori proyek yang akan diisi bab berikutnya
+```
+
+| Halaman | Isi |
+| --- | --- |
+| [Instalasi Next.js](/docs/memory-game/setup/nextjs) | `create-next-app`, versi, path alias, port 3002 |
+| [Tailwind CSS & Styling](/docs/memory-game/setup/tailwind) | Tailwind v4, shadcn/ui, fonts, tema pixel |
+| [Supabase & Environment](/docs/memory-game/setup/supabase) | 2 project, `.env.local`, skema SQL A & B |
+| [Struktur Folder](/docs/memory-game/setup/struktur-folder) | Layout `app/`, `components/`, `lib/`, dll. |
+
+---
+
+## Prasyarat
+
+- **Node.js 18.x+** (Next.js 14.2.16 memakai React 18; versi Node lama bisa menimbulkan error di beberapa dependency).
+- **npm** (atau `yarn`/`pnpm` — proyek asli punya `package-lock.json` dan `yarn.lock`).
+- **Gmail/Google Account** — untuk membuat 2 project Supabase (dipakai OAuth Google di bab [Login](/docs/memory-game/login), tapi akun sudah dibutuhkan dari sini).
+- **Supabase** — cukup akun gratis; butuh **2 project terpisah**.
+
+<Callout title="Kenapa butuh dua project Supabase?">
+Untuk angkat beban update skor paralel. Satu project menangani auth/quiz/backup (`A`), satu lagi menangani row per pemain dan Realtime (`B`). Penjelasan lengkap ada di [Overview & Arsitektur](/docs/memory-game).
+</Callout>
+
+---
+
+## Verifikasi Akhir
+
+Setelah semua sub-halaman selesai diikuti, seharusnya:
+
+```bash
+npm install
+npm run build    # tidak boleh ada error
+npm run dev      # buka http://localhost:3002
+```
+
+Jika `npm run build` gagal di tahap HTML/Shiki atau sejenisnya, cek dulu versi `next`, `react`, dan `tw-animate-css` — sengaja tidak dipakai `latest` agar konsisten dengan proyek asli.

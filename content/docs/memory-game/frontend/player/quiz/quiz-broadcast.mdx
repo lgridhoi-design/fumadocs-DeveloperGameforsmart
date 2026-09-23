@@ -1,0 +1,59 @@
+---
+title: "QuizBroadcast"
+description: "Helper pengumpulan jawaban real-time."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/quiz/components/quiz-broadcast.ts
+
+```ts
+import { isPlayersSupabaseConfigured, supabasePlayers } from "@/lib/supabase-players"
+import { supabase } from "@/lib/supabase"
+
+interface BroadcastQuizPhaseParams {
+  roomCode: string
+  phase: string
+  playerId: string | null
+  nickname?: string | null
+  questionsAnswered: number
+  currentQuestion: number
+}
+
+export function broadcastQuizPhase({
+  roomCode,
+  phase,
+  playerId,
+  nickname,
+  questionsAnswered,
+  currentQuestion,
+}: BroadcastQuizPhaseParams): void {
+  try {
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase;
+    const broadcastChannel = client.channel(`progress-${roomCode}`)
+    broadcastChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        broadcastChannel.send({
+          type: 'broadcast',
+          event: 'progress-update',
+          payload: {
+            playerId,
+            updateData: {
+              nickname: nickname ?? undefined,
+              questionsAnswered,
+              currentQuestion,
+              phase,
+            },
+            timestamp: Date.now()
+          }
+        }).catch(e => console.error('[Quiz] Error sending phase broadcast:', e))
+          .finally(() => {
+            client.removeChannel(broadcastChannel)
+          })
+      }
+    })
+  } catch (e) {
+    console.error('[Quiz] Broadcast fail error:', e)
+  }
+}
+```

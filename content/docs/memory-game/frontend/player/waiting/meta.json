@@ -1,0 +1,10 @@
+{
+  "title": "Waiting Room",
+  "pages": [
+    "index",
+    "types",
+    "waiting-card",
+    "game-starting-screen",
+    "exit-dialog"
+  ]
+}

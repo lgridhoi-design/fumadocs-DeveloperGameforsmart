@@ -1,0 +1,126 @@
+---
+title: "WaitingCard"
+description: "Kartu status menunggu pemain lain."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/waiting/components/waiting-card.tsx
+
+```tsx
+import { Users } from "lucide-react"
+import { RobustGoogleAvatar } from "@/components/player/robust-google-avatar"
+import { VirtualizedPlayerList } from "@/components/player/virtualized-player-grid"
+import PlayerName from '@/components/player/player-name'
+import { ExitDialog } from "./exit-dialog"
+import type { WaitingPlayerInfo, WaitingRoomPlayer } from "./types"
+
+interface WaitingCardProps {
+  roomCode: string
+  playerCount: number
+  players: WaitingRoomPlayer[]
+  playerInfo: WaitingPlayerInfo | null
+  gameStarted: boolean
+  showExitDialog: boolean
+  isLeaving: boolean
+  onOpenChange: (open: boolean) => void
+  onLeave: () => void
+}
+
+export function WaitingCard({
+  roomCode,
+  playerCount,
+  players,
+  playerInfo,
+  gameStarted,
+  showExitDialog,
+  isLeaving,
+  onOpenChange,
+  onLeave,
+}: WaitingCardProps) {
+  const otherPlayers = (players ?? [])
+    .filter(player => player.nickname !== playerInfo?.nickname)
+    .map(player => ({
+      id: player.id,
+      nickname: player.nickname,
+      avatar: player.avatar || '',
+      isHost: player.isHost,
+      isCurrentPlayer: false
+    }))
+
+  return (
+    <div className="relative pixel-waiting-container">
+      <div className="absolute inset-0 bg-linear-to-br from-green-600 to-cyan-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+      <div className="relative bg-linear-to-br from-green-500 to-cyan-500 rounded-lg border-2 sm:border-4 border-black shadow-2xl pixel-waiting-card">
+        <div className="p-3 sm:p-4 md:p-6 relative">
+          <div className="flex flex-row items-center justify-between mb-3 sm:mb-4 md:mb-6">
+            <div className="flex justify-start">
+              <div className="inline-flex items-center justify-center h-8 sm:h-10 bg-white border-2 border-black rounded-lg px-2 sm:px-3">
+                <span className="text-black font-bold text-xs pixel-font flex items-center gap-1.5">
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span>{playerCount}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <ExitDialog
+                open={showExitDialog}
+                roomCode={roomCode}
+                isLeaving={isLeaving}
+                onOpenChange={onOpenChange}
+                onLeave={onLeave}
+              />
+            </div>
+          </div>
+
+          {playerInfo && (
+            <div className="mb-3 sm:mb-4 md:mb-6">
+              <div className="bg-blue-100 border-2 border-blue-500 rounded p-2 sm:p-3 pixel-player-card relative overflow-hidden flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0">
+                    <RobustGoogleAvatar
+                      avatarUrl={playerInfo.avatar}
+                      alt={`${playerInfo.nickname} avatar`}
+                      className="!w-full !h-full"
+                      width={40}
+                      height={40}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-black text-xs sm:text-sm truncate">
+                      <PlayerName
+                        name={playerInfo.nickname}
+                        fullname={playerInfo.nickname}
+                        className="truncate"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <span className="inline-block bg-blue-600 border-2 border-black text-white font-black text-[8px] sm:text-[9px] px-2 py-0.5 rounded pixel-font tracking-wider shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                    ANDA
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mb-3 sm:mb-4 md:mb-6">
+            <VirtualizedPlayerList
+              players={otherPlayers}
+              currentPlayerId={playerInfo?.playerId}
+            />
+          </div>
+
+          <div className="bg-black/20 border border-white/30 rounded p-3 sm:p-4 text-center">
+            <p className="text-white text-xs sm:text-sm pixel-font-sm leading-tight sm:leading-normal">
+              {gameStarted ? "Game akan segera dimulai!" : "Menunggu Host memulai game..."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```

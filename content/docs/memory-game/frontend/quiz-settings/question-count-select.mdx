@@ -1,0 +1,46 @@
+---
+title: "QuestionCountSelect"
+description: "Pilihan jumlah soal."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/quiz-settings/components/question-count-select.tsx
+
+```tsx
+import { HelpCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+interface QuestionCountSelectProps {
+  value: string
+  options: number[]
+  onChange: (value: string) => void
+}
+
+export function QuestionCountSelect({ value, options, onChange }: QuestionCountSelectProps) {
+  return (
+    <div className="bg-white border-2 border-black rounded p-2 sm:p-3 pixel-setting-section">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-5 h-5 bg-blue-300 border border-black rounded flex items-center justify-center shrink-0">
+          <HelpCircle className="h-3 w-3 text-black" />
+        </div>
+        <span className="font-bold text-[8px] sm:text-[9px] pixel-font bg-blue-300 border border-black rounded px-2 py-0.5">
+          JUMLAH SOAL
+        </span>
+      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full bg-white border-2 border-black rounded-none shadow-sm font-bold text-[9px] sm:text-[10px] pixel-font text-black h-8 sm:h-9">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-white border-2 border-black">
+          {options.map(v => (
+            <SelectItem key={v} value={String(v)} className="pixel-font text-[9px] sm:text-[10px]">
+              {v} Soal
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+```

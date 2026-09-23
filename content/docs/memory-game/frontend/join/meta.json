@@ -1,0 +1,10 @@
+{
+  "title": "Join",
+  "pages": [
+    "index",
+    "room-code",
+    "join-card",
+    "join-loading-screen",
+    "access-denied-modal"
+  ]
+}

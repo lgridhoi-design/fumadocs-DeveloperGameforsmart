@@ -1,0 +1,177 @@
+---
+title: Backend
+description: "Backend minimal & fungsional — 3 Route Handler di app/api untuk join room, heartbeat pemain, dan status countdown."
+---
+
+# Backend
+
+Hampir semua logic Memory Game berjalan langsung dari komponen (baca/tulis Supabase di sisi klien). Bab ini hanya berisi **3 Route Handler** (`app/api/`) yang perlu berjalan di server agar alur game berfungsi: join room, heartbeat (tanda pemain masih aktif), dan status countdown. Versi minimal ini memakai satu client Supabase saja, tanpa service-role key atau dual database.
+
+Semua file memakai helper client server di bawah, ditaruh di `lib/supabase-server.ts`:
+
+```ts
+import { createClient } from "@supabase/supabase-js"
+
+export const serverSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
+```
+
+> Tabel `sessions` dan `participants` sudah dibuat di bab [Database](/docs/memory-game/database) — satu project Supabase, RLS boleh akses read/write.
+
+## 1. Join Room — `app/api/rooms/[roomCode]/join/route.ts`
+
+***POST*** — dipanggil pemain saat menekan tombol Gabung. Mengecek room ada, lalu menyimpan pemain ke tabel `participants` supaya muncul di Realtime dan daftar pemain host.
+
+```ts
+import { NextRequest, NextResponse } from "next/server"
+import { serverSupabase } from "@/lib/supabase-server"
+
+export const dynamic = "force-dynamic"
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { roomCode: string } }
+) {
+  const roomCode = params.roomCode?.trim()?.toUpperCase()
+  const body = await request.json()
+  const { nickname, avatar } = body
+
+  if (!roomCode || !nickname) {
+    return NextResponse.json({ success: false, error: "Room code dan nickname wajib" }, { status: 400 })
+  }
+
+  // Cari sesi berdasarkan kode room
+  const { data: session } = await serverSupabase
+    .from("sessions")
+    .select("*")
+    .eq("game_pin", roomCode)
+    .single()
+
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Room tidak ditemukan" }, { status: 404 })
+  }
+
+  const player = {
+    id: "01m" + Math.random().toString(36).substring(2, 15),
+    session_id: session.id,
+    nickname,
+    avatar: avatar || "",
+    score: 0,
+    correct: 0,
+    current_question: 0,
+    answers: [],
+  }
+
+  const { error } = await serverSupabase
+    .from("participants")
+    .upsert(player, { onConflict: "id" })
+
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, player, roomCode })
+}
+```
+
+## 2. Heartbeat — `app/api/rooms/[roomCode]/heartbeat/route.ts`
+
+***POST*** — dipanggil pemain setiap beberapa detik selama aktif sebagai tanda "masih hidup". Host memakai data ini untuk deteksi pemain yang putus koneksi.
+
+```ts
+import { NextRequest, NextResponse } from "next/server"
+import { serverSupabase } from "@/lib/supabase-server"
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { roomCode: string } }
+) {
+  const { roomCode } = params
+  const body = await request.json()
+  const { playerId } = body
+
+  if (!playerId) {
+    return NextResponse.json({ error: "Player ID wajib" }, { status: 400 })
+  }
+
+  const { error } = await serverSupabase
+    .from("participants")
+    .update({ last_heartbeat: new Date().toISOString() })
+    .eq("id", playerId)
+
+  if (error) {
+    return NextResponse.json({ error: "Gagal update heartbeat" }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true, serverTime: Date.now(), roomCode, playerId })
+}
+```
+
+## 3. Status Countdown — `app/api/rooms/[roomCode]/countdown-state/route.ts`
+
+***GET*** — memberi status room dan sisa hitung mundur versi **server-authoritative** agar semua pemain mulai pada waktu yang sama (kompensasi latensi disederhanakan).
+
+```ts
+import { NextRequest, NextResponse } from "next/server"
+import { serverSupabase } from "@/lib/supabase-server"
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { roomCode: string } }
+) {
+  const { roomCode } = params
+
+  const { data: session, error } = await serverSupabase
+    .from("sessions")
+    .select("status, countdown_started_at")
+    .eq("game_pin", roomCode)
+    .single()
+
+  if (error || !session) {
+    return NextResponse.json({ error: "Room tidak ditemukan" }, { status: 404 })
+  }
+
+  const now = Date.now()
+  const countdownStart = session.countdown_started_at
+    ? new Date(session.countdown_started_at).getTime()
+    : null
+
+  // Hitung sisa waktu countdown 10 detik dari mulai
+  let countdownState = null
+  let status = session.status
+
+  if (countdownStart) {
+    const totalDuration = 10 * 1000
+    const remainingMs = totalDuration - (now - countdownStart)
+    const remaining = Math.max(0, Math.ceil(remainingMs / 1000))
+
+    countdownState = {
+      remaining,
+      isActive: remaining > 0 && remainingMs > 0,
+      serverTime: now,
+    }
+
+    if (remaining > 0) status = "countdown"
+  }
+
+  return NextResponse.json({
+    roomCode,
+    status,
+    countdownState,
+    serverTime: now,
+  })
+}
+```
+
+## Ringkasan
+
+| Route Handler | Method | Fungsi |
+| --- | --- | --- |
+| `/api/rooms/[roomCode]/join` | POST | Simpan pemain ke `participants` saat gabung room |
+| `/api/rooms/[roomCode]/heartbeat` | POST | Perbarui `last_heartbeat` (liveness pemain) |
+| `/api/rooms/[roomCode]/countdown-state` | GET | Status room + sisa hitung mundur untuk sinkronisasi |
+
+Logic lain (buat room, update skor, riwayat) tetap berjalan langsung dari komponen via Supabase, jadi tidak perlu Route Handler tambahan agar game berfungsi.

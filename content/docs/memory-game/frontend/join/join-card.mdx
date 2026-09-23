@@ -1,0 +1,159 @@
+---
+title: "JoinCard"
+description: "Form isi kode room untuk bergabung."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/join/components/join-card.tsx
+
+```tsx
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Camera } from "lucide-react"
+import Image from "next/image"
+import { AvatarSelector } from "@/components/join/avatar-selector"
+import PlayerName from '@/components/player/player-name'
+
+interface JoinCardProps {
+  roomCode: string
+  roomCodeError: string
+  roomError: string
+  selectedAvatar: string
+  profileAvatarUrl?: string | null
+  displayName: string
+  isJoining: boolean
+  onRoomCodeChange: (value: string) => void
+  onPaste: (e: React.ClipboardEvent) => void
+  onScan: () => void
+  onAvatarSelect: (avatar: string) => void
+  onJoin: () => void
+}
+
+export function JoinCard({
+  roomCode,
+  roomCodeError,
+  roomError,
+  selectedAvatar,
+  profileAvatarUrl,
+  displayName,
+  isJoining,
+  onRoomCodeChange,
+  onPaste,
+  onScan,
+  onAvatarSelect,
+  onJoin,
+}: JoinCardProps) {
+  const avatar = selectedAvatar || profileAvatarUrl
+
+  return (
+    <div className="relative pixel-card-container">
+      <div className="absolute inset-0 bg-linear-to-br from-blue-600 to-purple-600 rounded-lg transform rotate-1 pixel-card-shadow"></div>
+      <div className="relative bg-linear-to-br from-blue-500 to-purple-500 rounded-lg border-2 sm:border-4 border-black shadow-2xl pixel-card-main">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-block bg-white rounded px-3 sm:px-4 py-1 sm:py-2 border-2 border-black transform -rotate-1 shadow-lg">
+              <h2 className="text-lg sm:text-xl font-bold text-black pixel-font">GABUNG RUANG</h2>
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-black rounded p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 shrink-0">
+                {avatar ? (
+                  <div className="relative w-full h-full rounded-full border-2 border-black overflow-hidden">
+                    <Image
+                      src={avatar}
+                      alt="Avatar"
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-full bg-linear-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center border-2 border-white">
+                    <span className="text-white text-xl font-bold pixel-font">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-black/50 font-bold text-xs sm:text-sm">BERMAIN SEBAGAI</p>
+                <PlayerName name={displayName} className="text-black text-base sm:text-2xl font-bold mt-0.5 truncate w-full block" uppercase={false} />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="inline-block bg-white rounded px-2 py-1 border border-black">
+                  <Label htmlFor="roomCode" className="text-black font-bold text-xs sm:text-sm">KODE RUANG</Label>
+                </div>
+                <Button
+                  type="button"
+                  onClick={onScan}
+                  className="flex items-center gap-2 bg-white hover:bg-gray-100 border-2 border-black rounded px-3 py-1 text-black font-bold text-xs sm:text-sm transform hover:scale-105 transition-all duration-200 min-h-9"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span>SCAN</span>
+                </Button>
+              </div>
+              <div className="relative">
+                <Input
+                  id="roomCode"
+                  type="text"
+                  placeholder="Masukkan kode ruang 6 digit"
+                  value={roomCode}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+                    if (value.length <= 6) onRoomCodeChange(value)
+                  }}
+                  onPaste={onPaste}
+                  maxLength={6}
+                  className="bg-white border-2 border-black rounded-none shadow-lg font-mono text-black placeholder:text-gray-500 focus:border-blue-600 h-12 sm:h-auto text-center text-xl tracking-wider"
+                />
+              </div>
+              {roomCodeError && (
+                <div className="bg-red-500 border-2 border-black rounded px-3 py-2">
+                  <p className="text-xs sm:text-sm text-white font-bold">{roomCodeError}</p>
+                </div>
+              )}
+              {roomError && (
+                <div className="bg-red-500 border-2 border-black rounded px-3 py-2">
+                  <p className="text-xs sm:text-sm text-white font-bold">{roomError}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-block bg-white rounded px-2 py-1 border border-black">
+                <Label className="text-black font-bold text-xs sm:text-sm">PILIH AVATAR</Label>
+              </div>
+              <div className="bg-white border-2 border-black rounded p-2 sm:p-3">
+                <AvatarSelector
+                  selectedAvatar={selectedAvatar}
+                  onAvatarSelect={onAvatarSelect}
+                  externalAvatar={profileAvatarUrl ? profileAvatarUrl : undefined}
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 sm:pt-4">
+              <Button
+                className="w-full bg-green-500 hover:bg-green-600 border-2 border-black rounded-none shadow-lg font-bold text-black text-base sm:text-lg py-3 transform hover:scale-105 transition-all duration-200 min-h-11"
+                onClick={onJoin}
+                disabled={isJoining || !roomCode.trim()}
+              >
+                {isJoining ? "BERGABUNG..." : "GABUNG RUANG"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```

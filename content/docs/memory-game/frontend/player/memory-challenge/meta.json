@@ -1,0 +1,8 @@
+{
+  "title": "Memory Challenge",
+  "pages": [
+    "index",
+    "memory-game-shell",
+    "memory-completed-screen"
+  ]
+}

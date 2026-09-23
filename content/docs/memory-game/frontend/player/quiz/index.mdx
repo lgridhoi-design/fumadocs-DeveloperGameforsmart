@@ -1,0 +1,877 @@
+---
+title: "Player: Quiz"
+description: "Kode lengkap halaman kuis pemain (player quiz) pada aplikasi Memory Game."
+---
+
+#### app/player/[roomCode]/quiz/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { type Question } from "@/lib/quiz-data"
+import { useRoom } from "@/hooks/use-room"
+import { roomManager } from "@/lib/room-manager"
+import { getTimerDisplayText } from "@/lib/timer-utils"
+import { useSynchronizedTimer } from "@/hooks/use-synchronized-timer"
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { supabaseRoomManager } from "@/lib/supabase-room-manager"
+// quizApi tidak lagi digunakan langsung untuk fetch soal saat game berlangsung
+// Soal dimuat langsung dari tabel sessions (Supabase B) dengan fallback game_sessions (Supabase A)
+import { scoreUpdateQueue } from "@/lib/score-update-queue"
+import { participantsApi, isPlayersSupabaseConfigured, supabasePlayers } from "@/lib/supabase-players"
+import { supabase } from "@/lib/supabase"
+
+import { CountdownTimer } from "@/components/game/countdown-timer"
+import { PageTitle } from '@/components/layout/page-title'
+import { FullscreenGuard } from "@/components/guards/fullscreen-guard"
+import { getServerNow } from "@/lib/server-time"
+import {
+  getQuizProgress,
+  saveQuizProgress,
+  shouldRedirectToInitialMemory,
+  shouldTriggerMemoryGameAfterAnswers,
+  hasUnfinishedMemoryGame,
+  memoryChallengePath,
+  type QuizMemoryProgress
+} from "@/lib/quiz-memory-flow"
+import { QuizLoadingScreen } from "./components/quiz-screens"
+import { QuizGameView } from "./components/quiz-game-view"
+import { shuffleArrayWithIndices, shuffleQuestionsWithSeed } from "./components/quiz-utils"
+import { loadQuizQuestions } from "./components/quiz-load"
+import { saveQuizLastResult } from "./components/quiz-storage"
+import { broadcastQuizPhase } from "./components/quiz-broadcast"
+
+interface QuizPageProps {
+  params: {
+    roomCode: string
+  }
+  searchParams: {
+    quizId?: string
+    questionCount?: string
+    timeLimit?: string
+  }
+}
+
+// CRITICAL: Delay untuk memastikan Supabase sync selesai sebelum redirect
+const QUIZ_LOAD_TIMEOUT = 5000 // 5 detik timeout untuk load quiz
+
+export default function QuizPage({ params, searchParams }: QuizPageProps) {
+  const router = useRouter()
+
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  const [questionsAnswered, setQuestionsAnswered] = useState(0)
+  const [questionsAnsweredInitialized, setQuestionsAnsweredInitialized] = useState(false)
+  const [gameFinished, setGameFinished] = useState(false)
+  const [showResult, setShowResult] = useState(false)
+  const [gameStarted, setGameStarted] = useState(false)
+  const [showTimeWarning, setShowTimeWarning] = useState(false)
+  const [timeUpHandled, setTimeUpHandled] = useState(false)
+  const [shuffledOptions, setShuffledOptions] = useState<{ [questionIndex: number]: { shuffled: (string | { text: string; image?: string })[], originalIndices: number[] } }>({})
+  // Evaluasi benar/salah dilakukan lokal memakai question.correct dari soal yang dimuat.
+
+  const [playerId, setPlayerId] = useState<string | null>(null)
+  const [playerData, setPlayerData] = useState<any>(null)
+  const [isHost, setIsHost] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  // 🔑 FIX: Track the last addAnswer() promise so we can await it before redirecting
+  // Without this, answers are saved fire-and-forget and the page redirects before Supabase write completes
+  const lastAnswerUpdateRef = useRef<Promise<boolean> | null>(null)
+  const { room, loading } = useRoom(params.roomCode)
+  const questionsInitialized = useRef(false)
+
+  // Lock body scroll when image is zoomed
+  useEffect(() => {
+    if (zoomedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [zoomedImage])
+
+  // Load player data from session manager
+  useEffect(() => {
+    const loadPlayerData = async () => {
+      try {
+        const sessionId = sessionManager.getSessionIdFromStorage()
+        if (sessionId) {
+          const sessionData = await sessionManager.getSessionData(sessionId)
+          if (sessionData && sessionData.user_type === 'player') {
+            setPlayerId(sessionData.user_data.id)
+            setPlayerData(sessionData.user_data)
+
+          }
+        }
+
+        // Fallback to localStorage if session not found
+        if (!playerId && typeof window !== 'undefined') {
+          const player = localStorage.getItem("currentPlayer")
+          if (player) {
+            const playerInfo = JSON.parse(player)
+            setPlayerId(playerInfo.id)
+            setPlayerData(playerInfo)
+
+          }
+        }
+      } catch (error) {
+        console.error("[Quiz] ❌ Error loading player data:", error)
+      }
+    }
+
+    loadPlayerData()
+  }, [])
+
+  // 🔒 PROTECTION: kembali ke memory jika belum selesai
+  useEffect(() => {
+    const checkMemoryGameStatus = () => {
+      if (typeof window === "undefined" || isHost) return
+
+      if (hasUnfinishedMemoryGame(params.roomCode)) {
+        router.push(memoryChallengePath(params.roomCode))
+      }
+    }
+
+    checkMemoryGameStatus()
+    window.addEventListener("focus", checkMemoryGameStatus)
+    return () => window.removeEventListener("focus", checkMemoryGameStatus)
+  }, [params.roomCode, isHost])
+
+  // Memory game di awal sesi (sebelum soal pertama)
+  useEffect(() => {
+    if (typeof window === "undefined" || isHost || !gameStarted || !room) return
+    if (localStorage.getItem(`memory-return-${params.roomCode}`)) return
+
+    if (shouldRedirectToInitialMemory(params.roomCode)) {
+      const progress = getQuizProgress(params.roomCode) || {
+        currentQuestion: 0,
+        correctAnswers: 0,
+        quizScore: 0,
+        questionsAnswered: 0,
+        memoryGamesCompleted: 0,
+        questionsSinceLastMemory: 0,
+        pendingMemoryGame: true
+      }
+      saveQuizProgress(params.roomCode, { ...progress, pendingMemoryGame: true })
+      router.push(memoryChallengePath(params.roomCode))
+    }
+  }, [gameStarted, room, isHost, params.roomCode])
+
+  const redirectHostToLeaderboard = useCallback(() => {
+    if (!params.roomCode) return
+    router.replace(`/host/leaderboard?roomCode=${params.roomCode}`)
+  }, [params.roomCode])
+
+  const broadcastGameEnded = useCallback(() => {
+    try {
+      if (typeof window === "undefined" || !params.roomCode) return
+      const broadcastChannel = new BroadcastChannel(`game-end-${params.roomCode}`)
+      broadcastChannel.postMessage({
+        type: "game-ended",
+        roomCode: params.roomCode,
+        timestamp: Date.now(),
+      })
+      broadcastChannel.close()
+    } catch {
+      // non-fatal
+    }
+  }, [params.roomCode])
+
+  const finishGameAsHost = useCallback(async (
+    finalQuestionsAnswered: number = questionsAnswered,
+    forcedDurationSeconds?: number
+  ) => {
+    if (!params.roomCode) return
+    try {
+      if (playerId) {
+        await scoreUpdateQueue.flushNow()
+        await roomManager.markPlayerFinished(
+          params.roomCode,
+          playerId,
+          undefined,
+          Math.max(finalQuestionsAnswered, questions.length),
+          undefined,
+          typeof forcedDurationSeconds === 'number' ? forcedDurationSeconds : undefined
+        )
+      }
+      await roomManager.updateGameStatus(params.roomCode, "finished")
+      broadcastGameEnded()
+    } catch (error) {
+      console.error("[Quiz] finishGameAsHost error:", error)
+    } finally {
+      redirectHostToLeaderboard()
+    }
+  }, [
+    params.roomCode,
+    playerId,
+    questionsAnswered,
+    questions.length,
+    broadcastGameEnded,
+    redirectHostToLeaderboard,
+  ])
+
+  // Handle timer expiration
+  const handleTimeUp = useCallback(async () => {
+    if (timeUpHandled || redirecting) return
+    setTimeUpHandled(true)
+    setRedirecting(true)
+
+    console.log('[Quiz] Time up - handling game end, isHost:', isHost)
+
+    try {
+      // 🚀 OPTIMIZED: Flush all pending queue updates before game ends
+      await scoreUpdateQueue.flushNow()
+
+      const gameStartMs = room?.startedAt ? new Date(room.startedAt).getTime() : 0
+      const actualDurationSeconds = gameStartMs > 0
+        ? Math.max(1, Math.floor((getServerNow() - gameStartMs) / 1000))
+        : Math.max(1, Math.floor((room?.settings?.totalTimeLimit || 5) * 60))
+
+      if (isHost) {
+        setGameFinished(true)
+        void finishGameAsHost(questionsAnswered, actualDurationSeconds)
+      } else {
+        console.log('[Quiz] Player handling time up — marking finished and redirecting to result page...')
+        if (playerId) {
+          try {
+            await roomManager.markPlayerFinished(
+              params.roomCode,
+              playerId,
+              undefined,
+              questionsAnswered,
+              undefined,
+              actualDurationSeconds
+            )
+            saveQuizLastResult(params.roomCode, playerId, questionsAnswered, actualDurationSeconds)
+          } catch (syncErr) {
+            console.warn('[Quiz] Error persisting time-up results:', syncErr)
+          }
+        }
+        router.push(`/player/${params.roomCode}/result`)
+      }
+    } catch (error) {
+      console.error("[Quiz] ❌ Error ending game due to timer expiration:", error)
+      if (!isHost) {
+        router.push(`/player/${params.roomCode}/result`)
+      } else {
+        router.push(`/host/leaderboard?roomCode=${params.roomCode}`)
+      }
+    }
+  }, [timeUpHandled, redirecting, params.roomCode, isHost, finishGameAsHost, playerId, questionsAnswered, room])
+
+  const timerState = useSynchronizedTimer(room, undefined, handleTimeUp)
+
+  // Show warning when time is running low or time is up
+  useEffect(() => {
+    if (room && room.status !== 'waiting' && room.status !== 'countdown' && timerState.remainingTime !== Number.MAX_SAFE_INTEGER && timerState.remainingTime <= 30 && (!timeUpHandled || timerState.remainingTime > 0)) {
+      setShowTimeWarning(true)
+    } else {
+      setShowTimeWarning(false)
+    }
+  }, [timerState.remainingTime, timeUpHandled, room])
+
+  // CRITICAL: Host detection and initial sync
+  useEffect(() => {
+    if (room && playerId && questions.length > 0 && !questionsAnsweredInitialized) {
+      const currentPlayer = room.players.find((p) => p.id === playerId)
+      const hostStatus = currentPlayer?.isHost || false
+      setIsHost(hostStatus)
+
+      // Sync questionsAnswered dengan database/localStorage
+      if (currentPlayer && !questionsAnsweredInitialized) {
+        const localProgress = getQuizProgress(params.roomCode)
+        const dbQuestionsAnswered = currentPlayer.questionsAnswered || 0
+
+        const initialQuestionsAnswered = localProgress && localProgress.questionsAnswered > dbQuestionsAnswered
+          ? localProgress.questionsAnswered
+          : dbQuestionsAnswered
+
+        console.log(`[Quiz] Init state — initialQ: ${initialQuestionsAnswered}`)
+
+        setQuestionsAnswered(initialQuestionsAnswered)
+        // FIX: Pastikan currentQuestion tidak pernah negatif
+        setCurrentQuestion(Math.min(initialQuestionsAnswered, Math.max(0, questions.length - 1)))
+        setQuestionsAnsweredInitialized(true)
+      }
+    }
+  }, [room, playerId, questionsInitialized, questionsAnsweredInitialized, questions.length, params.roomCode])
+
+  // Broadcast phase update to host when quiz page loads/resumes
+  useEffect(() => {
+    if (!playerId || !params.roomCode || !questionsAnsweredInitialized) return
+
+    const client = isPlayersSupabaseConfigured() ? supabasePlayers : supabase
+    const broadcastChannel = client.channel(`progress-${params.roomCode}`)
+
+    // 1. Update phase to QUIZ in database
+    const updateDbPhase = async () => {
+      try {
+        await supabaseRoomManager.updateGameProgress(params.roomCode, playerId, {
+          phase: "QUIZ"
+        })
+      } catch (dbError) {
+        console.warn('[Quiz] Failed to update phase in DB:', dbError)
+      }
+    }
+    updateDbPhase()
+
+    // 2. Broadcast phase to Host (tanpa skor — skor hanya muncul saat game selesai)
+    broadcastChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        broadcastChannel.send({
+          type: 'broadcast',
+          event: 'progress-update',
+          payload: {
+            playerId,
+            updateData: {
+              nickname: playerData?.nickname,
+              questionsAnswered: questionsAnswered,
+              currentQuestion: currentQuestion + 1,
+              phase: "QUIZ"
+            },
+            timestamp: Date.now()
+          }
+        }).catch(e => console.error('[Quiz] Error sending phase broadcast:', e))
+      }
+    })
+
+    return () => {
+      client.removeChannel(broadcastChannel)
+    }
+  }, [playerId, params.roomCode, questionsAnsweredInitialized, playerData])
+
+  // CRITICAL: Real-time sync (HANYA sync questionsAnswered — skor tidak disinkron)
+  useEffect(() => {
+    if (room && playerId && questionsAnsweredInitialized && questions.length > 0) {
+      const currentPlayer = room.players.find((p) => p.id === playerId)
+      if (currentPlayer) {
+        const dbQuestionsAnswered = currentPlayer.questionsAnswered || 0
+
+        if (dbQuestionsAnswered > questionsAnswered) {
+          setQuestionsAnswered(dbQuestionsAnswered)
+          // FIX: Pastikan currentQuestion tidak pernah negatif
+          setCurrentQuestion(Math.min(dbQuestionsAnswered, Math.max(0, questions.length - 1)))
+        }
+      }
+    }
+  }, [room, playerId, questionsAnsweredInitialized, questionsAnswered, questions.length])
+
+  // Monitor room status for game end
+  useEffect(() => {
+    if (room?.status === "finished" && params.roomCode) {
+      if (isHost) {
+        redirectHostToLeaderboard()
+      } else if (!redirecting && !gameFinished) {
+        // 🔑 FIX: Write duration to localStorage before redirect so result page has correct timeSpent
+        const gsMs = room?.startedAt ? new Date(room.startedAt).getTime() : 0
+        const elapsed = gsMs > 0 ? Math.max(1, Math.floor((getServerNow() - gsMs) / 1000)) : 0
+        try {
+          saveQuizLastResult(params.roomCode, playerId, questionsAnswered, elapsed)
+        } catch { /* non-fatal */ }
+        router.replace(`/player/${params.roomCode}/result`)
+      }
+    }
+  }, [room?.status, isHost, params.roomCode, redirectHostToLeaderboard])
+
+  // 🔑 FIX BUG D: Aggressive host leaderboard redirect.
+  // When a player finishes on HP and updates room.status = "finished" in Supabase, the host
+  // needs to redirect. Previously this was blocked if isHost wasn't set yet. Now we check
+  // directly from room.players to determine host status.
+  useEffect(() => {
+    if (room?.status !== "finished" || !params.roomCode || !playerId) return
+    const meInRoom = room.players.find(p => p.id === playerId)
+    if (meInRoom?.isHost) {
+      console.log('[Quiz] 🏁 Room finished — host redirect to leaderboard (aggressive path)')
+      redirectHostToLeaderboard()
+    }
+  }, [room?.status, room?.players, playerId, params.roomCode, redirectHostToLeaderboard])
+
+  // Fallback: jangan stuck di layar loading setelah quiz selesai
+  useEffect(() => {
+    if (!isHost || !params.roomCode) return
+    if (!redirecting && !gameFinished) return
+    const timeoutId = setTimeout(() => {
+      if (window.location.pathname.includes("/quiz/")) {
+        redirectHostToLeaderboard()
+      }
+    }, 2500)
+    return () => clearTimeout(timeoutId)
+  }, [redirecting, gameFinished, isHost, params.roomCode, redirectHostToLeaderboard])
+
+
+
+  // Listen for immediate game end broadcast
+  useEffect(() => {
+    if (!isHost && params.roomCode) {
+      const broadcastChannel = new BroadcastChannel(`game-end-${params.roomCode}`)
+
+      broadcastChannel.onmessage = (event) => {
+        if (event.data.type === 'game-ended') {
+
+          broadcastChannel.close()
+          router.push(`/player/${params.roomCode}/result`)
+        }
+      }
+
+      return () => {
+        broadcastChannel.close()
+      }
+    }
+  }, [isHost, params.roomCode])
+
+  // 🕒 ACCURATE TIMING: Mark player as started when the quiz actually begins
+  useEffect(() => {
+    if (room?.status === 'quiz' && playerId && params.roomCode) {
+      console.log('[Quiz] 🕒 Game is active, marking player as started for timing accuracy...')
+      participantsApi.markStarted(params.roomCode, playerId)
+    }
+  }, [room?.status, playerId, params.roomCode])
+
+  // CRITICAL: Initialize quiz questions - FIX infinite loading
+  useEffect(() => {
+    // Wait for room, loading, and playerId to be ready
+    if (!room || loading || !playerId) {
+      return
+    }
+
+    // Cek apakah soal sudah diinisialisasi sebelumnya menggunakan useRef
+    if (questionsInitialized.current) {
+      return
+    }
+
+    const initQuestions = async () => {
+      questionsInitialized.current = true
+
+      const quizId = room.quizId || searchParams.quizId || "math-basic"
+      const questionCount = room.settings.questionCount
+      const defaultTitle = room.quizTitle || 'Quiz'
+
+const { questions: quizQuestions } = await loadQuizQuestions(
+          params.roomCode, quizId, questionCount, defaultTitle
+        )
+
+      setGameStarted(true)
+
+      if (quizQuestions.length > 0) {
+        let finalQuestions = quizQuestions
+        if (playerId) {
+          finalQuestions = shuffleQuestionsWithSeed(finalQuestions, playerId)
+        }
+
+        setQuestions(finalQuestions)
+
+        const shuffledOptionsMap: { [questionIndex: number]: { shuffled: (string | { text: string; image?: string })[], originalIndices: number[] } } = {}
+        finalQuestions.forEach((question, index) => {
+          const shuffled = shuffleArrayWithIndices(question.options)
+          shuffledOptionsMap[index] = shuffled
+        })
+
+        setShuffledOptions(shuffledOptionsMap)
+      } else {
+        console.error("[Quiz] ❌ Failed to load any questions")
+        setQuestions([])
+      }
+    }
+
+    initQuestions()
+  }, [searchParams, params.roomCode, room, loading, playerId])
+
+  // CRITICAL: Timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (questions.length === 0 && gameStarted && !loading) {
+        console.error("[Quiz] ⏰ Quiz loading timeout - questions still empty after", QUIZ_LOAD_TIMEOUT, "ms")
+
+        // Force set questions to empty array to break loading state
+        setQuestions([])
+        setShuffledOptions({})
+      }
+    }, QUIZ_LOAD_TIMEOUT)
+
+    return () => clearTimeout(timeout)
+  }, [questions.length, gameStarted, loading])
+
+  // Check memory game return
+  useEffect(() => {
+    const checkMemoryGameReturn = async () => {
+      const memoryReturn = localStorage.getItem(`memory-return-${params.roomCode}`)
+      if (memoryReturn) {
+
+        const data = JSON.parse(memoryReturn)
+
+        // Initialize with local data from memory-return first (Fastest & Guaranteed)
+        if (data) {
+          console.log('[Quiz] Restoring state from memory-return:', data)
+          if (data.resumeQuestion !== undefined) setCurrentQuestion(Math.max(0, data.resumeQuestion))
+          if (data.questionsAnswered !== undefined) setQuestionsAnswered(data.questionsAnswered)
+
+          const restored: QuizMemoryProgress = {
+            currentQuestion: data.resumeQuestion ?? 0,
+            correctAnswers: 0,
+            quizScore: 0,
+            questionsAnswered: data.questionsAnswered ?? 0,
+            memoryGamesCompleted: data.memoryGamesCompleted ?? 0,
+            questionsSinceLastMemory: data.questionsSinceLastMemory ?? 0,
+            pendingMemoryGame: false,
+            _sessionKey: room?.startedAt ? `${params.roomCode}:${room.startedAt}` : undefined
+          }
+          saveQuizProgress(params.roomCode, restored)
+        }
+
+        // Then try to sync with Supabase for truth (background update) — HANYA questionsAnswered
+        if (playerId) {
+          const progressData = await supabaseRoomManager.getPlayerGameProgress(params.roomCode, playerId)
+          if (progressData && progressData.game_progress) {
+            const progress = progressData.game_progress
+
+            // Log for debugging
+            console.log('[Quiz] Supabase progress found:', progress)
+
+            // Only overwrite if Supabase has advanced data (prevent rollback)
+            if ((progress.questions_answered || 0) >= (data.questionsAnswered || 0)) {
+              setCurrentQuestion(progress.current_question || data.resumeQuestion || currentQuestion)
+              setQuestionsAnswered(progress.questions_answered || 0)
+            }
+          }
+        }
+
+        localStorage.removeItem(`memory-return-${params.roomCode}`)
+
+
+        // Check if player has completed all questions after memory game
+        const totalQuestions = room?.settings.questionCount || 10
+        const currentQuestionsAnswered = data?.questionsAnswered ?? questionsAnswered ?? 0
+
+        if (currentQuestionsAnswered >= totalQuestions) {
+          console.log('[Quiz] All questions completed after memory return')
+
+          if (redirecting) return
+          setRedirecting(true)
+
+          try {
+            // 🔧 FIX: Only HOST should call updateGameStatus to avoid race condition
+            if (isHost) {
+              console.log('[Quiz] Host redirecting to leaderboard after memory return...')
+              setGameFinished(true)
+              void finishGameAsHost()
+            } else {
+              // Player: Just redirect
+              console.log('[Quiz] Player redirecting to result after memory return...')
+              router.push(`/player/${params.roomCode}/result`)
+            }
+          } catch (error) {
+            console.error("[Quiz] ❌ Error ending game after memory return:", error)
+            if (!isHost) {
+              router.push(`/player/${params.roomCode}/result`)
+            } else {
+              router.push(`/host/leaderboard?roomCode=${params.roomCode}`)
+            }
+          }
+        }
+      }
+    }
+
+    if (gameStarted && !isHost && room) {
+      checkMemoryGameReturn()
+    }
+  }, [gameStarted, params.roomCode, playerId, isHost, room, questionsAnswered])
+
+  // CRITICAL: Handle answer selection
+  // Evaluasi benar/salah dilakukan LOKAL (question.correct tersedia di client),
+  // lalu jawaban + skor disimpan langsung ke DB via participantsApi.addAnswer.
+  const handleAnswerSelect = async (answerIndex: number) => {
+    if (selectedAnswer !== null || showResult) return
+
+    setSelectedAnswer(answerIndex)
+    setShowResult(true)
+
+    const currentShuffled = shuffledOptions[currentQuestion]
+    if (!currentShuffled) {
+      console.error("[Quiz] ❌ No shuffled options found for question", currentQuestion)
+      return
+    }
+
+    const originalIndex = currentShuffled.originalIndices[answerIndex]
+    const cq = questions[currentQuestion]
+    const statsQuestionId = cq.statsQuestionId ?? cq.id
+    const statsAnswerId = cq.optionStatsIds?.[originalIndex] ?? originalIndex
+
+    // Evaluasi lokal — kunci jawaban ada di soal yang dimuat
+    const isCorrect = originalIndex === cq.correct
+    const pointsPerQuestion = questions.length > 0 ? Math.round(100 / questions.length) : 0
+    const pointsEarned = isCorrect ? pointsPerQuestion : 0
+
+    // Simpan jawaban & skor langsung ke DB.
+    // addAnswer menghitung score kumulatif dari nilai correct fresh di DB (score = undefined).
+    const submitPromise = isPlayersSupabaseConfigured() && playerId
+      ? participantsApi.addAnswer(
+          params.roomCode,
+          playerId,
+          {
+            question_id: statsQuestionId,
+            answer_id: statsAnswerId,
+            is_correct: isCorrect,
+            points_earned: pointsEarned,
+          },
+          undefined,
+          currentQuestion + 1,
+          playerData?.nickname,
+          playerData?.avatar,
+          undefined
+        ).catch((err) => {
+          console.warn('[Quiz] ⚠️ Failed to save answer:', err)
+          return false
+        })
+      : Promise.resolve(false)
+
+    // Simpan promise supaya bisa ditunggu sebelum redirect ke result/memory game
+    lastAnswerUpdateRef.current = submitPromise.then(() => true)
+
+    const newQuestionsAnswered = questionsAnswered + 1
+    setQuestionsAnswered(newQuestionsAnswered)
+
+    const prevProgress = getQuizProgress(params.roomCode) || {
+      currentQuestion: 0,
+      correctAnswers: 0,
+      quizScore: 0,
+      questionsAnswered: 0,
+      memoryGamesCompleted: 0,
+      questionsSinceLastMemory: 0
+    }
+
+    const newQuestionsSinceLastMemory = (prevProgress.questionsSinceLastMemory || 0) + 1
+
+    const progressData: QuizMemoryProgress = {
+      currentQuestion: currentQuestion + 1,
+      correctAnswers: 0,
+      quizScore: 0,
+      questionsAnswered: newQuestionsAnswered,
+      memoryGamesCompleted: prevProgress.memoryGamesCompleted || 0,
+      questionsSinceLastMemory: newQuestionsSinceLastMemory,
+      pendingMemoryGame: false
+    }
+
+    saveQuizProgress(params.roomCode, progressData)
+
+    // Memory game ke-2 setelah 3 soal (benar/salah tidak masalah)
+    if (shouldTriggerMemoryGameAfterAnswers(progressData, newQuestionsAnswered, questions.length)) {
+      // Tunggu submit answer selesai sebelum pindah ke memory game
+      if (lastAnswerUpdateRef.current) {
+        try {
+          await lastAnswerUpdateRef.current
+          console.log('[Quiz] ✅ Answer saved before memory game redirect')
+        } catch (e) {
+          console.warn('[Quiz] ⚠️ Answer save may have failed before memory redirect:', e)
+        }
+      }
+
+      // Broadcast phase update ke GAME (tanpa skor) sebelum redirect
+      broadcastQuizPhase({
+        roomCode: params.roomCode,
+        phase: "GAME",
+        playerId,
+        nickname: playerData?.nickname,
+        questionsAnswered: newQuestionsAnswered,
+        currentQuestion: currentQuestion + 1,
+      })
+
+      saveQuizProgress(params.roomCode, {
+        ...progressData,
+        pendingMemoryGame: true
+      })
+
+      setTimeout(() => {
+        router.push(memoryChallengePath(params.roomCode))
+      }, 2000)
+      return
+    }
+
+    // Broadcast progress (tanpa skor) — host hanya melihat progress soal, bukan point
+    broadcastQuizPhase({
+      roomCode: params.roomCode,
+      phase: "QUIZ",
+      playerId,
+      nickname: playerData?.nickname,
+      questionsAnswered: newQuestionsAnswered,
+      currentQuestion: currentQuestion + 1,
+    })
+
+    // Countdown ke soal berikutnya
+    setTimeout(() => {
+      handleNextQuestion(newQuestionsAnswered)
+    }, 1000)
+  }
+
+  // CRITICAL: Handle next question dengan final sync yang lebih robust
+  const handleNextQuestion = async (
+    latestQuestionsAnswered: number = questionsAnswered
+  ) => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+      setSelectedAnswer(null)
+      setShowResult(false)
+    } else {
+      // CRITICAL: Quiz completed — sync then redirect
+      if (redirecting) return
+      setRedirecting(true)
+      setGameFinished(true)
+
+      const resultUrl = `/player/${params.roomCode}/result`
+
+      const gameStartMs = room?.startedAt ? new Date(room.startedAt).getTime() : 0
+      const timeElapsedSeconds = gameStartMs > 0
+        ? Math.max(1, Math.floor((getServerNow() - gameStartMs) / 1000))
+        : 0
+
+      const broadcastProgress = () => {
+        try {
+          if (typeof window === 'undefined' || !playerId) return
+          const progressChannel = new BroadcastChannel(`progress-update-${params.roomCode}`)
+          progressChannel.postMessage({
+            type: 'progress-update',
+            playerId,
+            updateData: { questionsAnswered: latestQuestionsAnswered },
+            timestamp: Date.now()
+          })
+          progressChannel.close()
+        } catch {
+          // non-fatal
+        }
+      }
+
+      if (isHost) {
+        console.log("[Quiz] Host completed quiz — finishing game and redirecting to leaderboard")
+        broadcastProgress()
+        void finishGameAsHost(latestQuestionsAnswered, timeElapsedSeconds)
+        return
+      }
+
+      try {
+        if (playerId) {
+          console.log("[Quiz] Player completed quiz — waiting for last answer to be saved...")
+
+          // 🔑 FIX: Wait for the last answer submission (server-side persistence) before redirecting
+          if (lastAnswerUpdateRef.current) {
+            try {
+              await Promise.race([
+                lastAnswerUpdateRef.current,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for last answer sync')), 2000))
+              ])
+              console.log('[Quiz] ✅ Last answer confirmed saved to Supabase')
+            } catch (e) {
+              console.warn('[Quiz] ⚠️ Last answer save timed out or failed:', e)
+            }
+          }
+
+          console.log("[Quiz] Player completed quiz — marking as finished")
+          await scoreUpdateQueue.flushNow()
+          await roomManager.markPlayerFinished(
+            params.roomCode,
+            playerId,
+            undefined,
+            Math.max(latestQuestionsAnswered, questions.length),
+            undefined,
+            timeElapsedSeconds
+          )
+          try {
+            saveQuizLastResult(params.roomCode, playerId, latestQuestionsAnswered, timeElapsedSeconds)
+          } catch {
+            // ignore
+          }
+        }
+        broadcastProgress()
+        router.replace(resultUrl)
+      } catch (error) {
+        console.error("[Quiz] Error in player final sync:", error)
+        router.replace(resultUrl)
+      }
+    }
+  }
+
+  // 🚀 PROFESSIONAL PRE-LOAD: Show countdown overlay if game is in countdown status
+  if (room?.status === "countdown") {
+    return (
+      <CountdownTimer
+        room={room}
+        onCountdownComplete={() => {
+          console.log('[Quiz] Countdown finished in pre-load overlay')
+        }}
+      />
+    )
+  }
+
+  // Render UI
+  if (loading) {
+    return (
+      <QuizLoadingScreen title="Memuat Kuis..." subtitle="Sedang menyiapkan pertanyaan" />
+    )
+  }
+
+  // CRITICAL: Pemisahan validasi room vs loading state lokal
+  if (!gameStarted || questions.length === 0 || !room || currentQuestion < 0) {
+    const isRoomActive = !!room && String(room.status) !== 'finished'
+    return (
+      <QuizLoadingScreen
+        title={isRoomActive ? 'Memuat Kuis...' : 'Sesi game tidak valid'}
+        subtitle={questions.length === 0 ? 'Sedang menyiapkan pertanyaan' : 'Menyinkronkan progres...'}
+      />
+    )
+  }
+
+  const progress = (questionsAnswered / (room?.settings.questionCount || questions.length)) * 100
+
+  // CRITICAL: Update UI untuk menampilkan status sync
+  if (gameFinished) {
+    return (
+      <QuizLoadingScreen
+        title="Kuis Selesai!"
+        subtitle={isHost ? 'Mengarahkan ke Papan Peringkat...' : 'Mengarahkan ke Hasil...'}
+        icon="trophy"
+      />
+    )
+  }
+
+  const question = questions[currentQuestion]
+  const currentShuffled = shuffledOptions[currentQuestion]
+
+  // CRITICAL: Guard clause untuk mencegah render jika shuffled options belum siap
+  if (!currentShuffled) {
+    return (
+      <QuizLoadingScreen title="Memuat Pertanyaan..." subtitle="Sedang menyiapkan pilihan jawaban" />
+    )
+  }
+
+  if (currentQuestion < 0 || currentQuestion >= questions.length) { // <-- FIX: Tambahkan guard clause
+    return (
+      <QuizLoadingScreen title="Menyinkronkan Progres..." subtitle="Memuat..." />
+    )
+  }
+
+  return (
+    <>
+      <FullscreenGuard />
+      <PageTitle title="Game" />
+      <QuizGameView
+        progress={progress}
+        showTimeWarning={showTimeWarning}
+        isTimeUp={timerState.remainingTime <= 0}
+        timerDisplayText={getTimerDisplayText(timerState)}
+        question={question}
+        currentShuffled={currentShuffled}
+        currentQuestion={currentQuestion}
+        totalQuestions={room?.settings.questionCount || questions.length}
+        selectedAnswer={selectedAnswer}
+        zoomedImage={zoomedImage}
+        onAnswerSelect={handleAnswerSelect}
+        onZoomedImageChange={setZoomedImage}
+      />
+    </>
+  )
+}
+```

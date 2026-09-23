@@ -1,0 +1,62 @@
+---
+title: "PlayerResultCard"
+description: "Kartu ringkasan skor pemain."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/player-result-card.tsx
+
+```tsx
+"use client"
+
+import { RobustGoogleAvatar } from "@/components/player/robust-google-avatar"
+import { PlayerName } from "@/components/player/player-name"
+import { getRandomAvatar } from "@/lib/avatar-utils"
+import type { PlayerRanking } from "./types"
+
+export function PlayerResultCard({ playerRanking }: { playerRanking: PlayerRanking }) {
+  const player = playerRanking.player
+  const isHttpAvatar = /^https?:\/\//.test(player.avatar)
+
+  return (
+    <div className="max-w-md mx-auto mb-6 p-10">
+      <div className="bg-gradient-to-br from-slate-800/35 to-slate-900/45 backdrop-blur-xl border-2 border-slate-400/25 rounded-lg p-6 pixel-lobby-card text-center relative shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/8 to-blue-400/8 rounded-lg blur-xl -z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent rounded-lg"></div>
+
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-3 border-slate-300/50 overflow-hidden mx-auto mb-4 relative shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/25 to-blue-400/25 rounded-full blur-lg"></div>
+          <div className="absolute inset-0 ring-1 ring-white/20 rounded-full"></div>
+          {isHttpAvatar ? (
+            <RobustGoogleAvatar
+              avatarUrl={player.avatar}
+              alt={`${player.nickname}'s avatar`}
+              width={96}
+              height={96}
+              className="w-full h-full relative z-10"
+            />
+          ) : (
+            <img
+              src={player.avatar}
+              alt={`${player.nickname}'s avatar`}
+              className="w-full h-full object-cover relative z-10"
+              onError={(e) => {
+                e.currentTarget.src = getRandomAvatar()
+              }}
+            />
+          )}
+        </div>
+
+        <div className="mb-3 drop-shadow-lg w-full px-2 flex justify-center items-center">
+          <PlayerName
+            name={player.nickname}
+            className="text-xl sm:text-2xl font-bold leading-tight text-white text-center block truncate w-full"
+            uppercase={false}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+```

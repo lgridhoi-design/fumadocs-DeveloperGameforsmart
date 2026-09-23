@@ -1,0 +1,151 @@
+---
+title: "PlayerProgressGrid"
+description: "Grid progres pemain secara real-time."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/[roomCode]/monitor/components/player-progress-grid.tsx
+
+```tsx
+import { Users } from "lucide-react"
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
+import { RobustGoogleAvatar } from "@/components/player/robust-google-avatar"
+import PlayerName from '@/components/player/player-name'
+import getDisplayName from '@/lib/display-name'
+import { getAnsweredQuestionCount, getTotalQuestions, hasCompletedAllQuizQuestions } from "@/lib/player-quiz-progress"
+
+interface ProgressPlayer {
+  id: string
+  nickname: string
+  avatar: string
+  phase?: string
+  currentQuestion?: number
+  timeSpent?: number
+  joinedAt?: string
+  quizScore?: number
+  correctAnswers?: number
+}
+
+interface PlayerProgressGridProps {
+  players: ProgressPlayer[]
+  room: any
+}
+
+export function PlayerProgressGrid({ players, room }: PlayerProgressGridProps) {
+  if (players.length === 0) {
+    return (
+      <div className="text-center py-8 sm:py-12">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-400 rounded border-2 sm:border-4 border-white mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+          <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+        </div>
+        <p className="text-sm sm:text-base lg:text-lg text-white">Belum ada pemain</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 min-h-0 lg:max-h-[650px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent pr-1 sm:pr-2">
+      <LayoutGroup id="player-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <AnimatePresence>
+            {players.map((player) => {
+              const totalQuizQuestions = getTotalQuestions(room)
+              const questionsAnswered = getAnsweredQuestionCount(player)
+              const completed = hasCompletedAllQuizQuestions(player, room)
+              const progressPercent = totalQuizQuestions ? Math.max(0, Math.min(100, Math.round((questionsAnswered / totalQuizQuestions) * 100))) : 0
+              return (
+                <motion.div
+                  key={player.id}
+                  layoutId={player.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.2 },
+                    scale: { duration: 0.2 },
+                  }}
+                  whileHover={{ scale: 1.03 }}
+                  className={`relative border-2 rounded-lg pt-2 pb-2.5 px-2.5 sm:pt-3 sm:pb-3 sm:px-3 ${completed
+                    ? 'bg-linear-to-br from-emerald-600/25 to-green-700/20 border-emerald-400/60'
+                    : 'bg-linear-to-br from-white/10 to-white/5 border-white/20 hover:bg-white/15'
+                    }`}
+                >
+                  <div className="px-3 mt-2 flex items-center gap-3">
+                    <div className="flex-1">
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className={`${completed ? 'bg-emerald-400' : 'bg-violet-500'} h-full transition-all duration-500`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-slate-300 font-bold whitespace-nowrap">
+                      {questionsAnswered}/{totalQuizQuestions}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-[auto_1fr] gap-x-2.5 items-start mt-3">
+                    <div className="self-start w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 border-2 border-white/10">
+                      <RobustGoogleAvatar avatarUrl={player.avatar} alt={`${getDisplayName(player)} avatar`} className="w-full h-full object-cover" width={40} height={40} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <PlayerName
+                        name={getDisplayName(player)}
+                        className={`font-bold text-sm sm:text-base ${completed ? 'text-emerald-100' : 'text-white'}`}
+                        uppercase={false}
+                      />
+
+                      <div className="mt-0.5">
+                        {(() => {
+                          const getPlayerPhase = () => {
+                            if (completed) return "FINISHED"
+                            if (player.phase) return String(player.phase).toUpperCase()
+
+                            const answered = getAnsweredQuestionCount(player)
+                            const rawCurrQ = Number(player.currentQuestion ?? 0)
+
+                            if (answered % 3 === 0 && rawCurrQ <= answered && !hasCompletedAllQuizQuestions(player, room)) {
+                              return "GAME"
+                            }
+
+                            return "QUIZ"
+                          }
+                          const phase = getPlayerPhase()
+
+                          if (phase === "FINISHED") {
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-600/80 border border-emerald-400/50 text-white font-bold text-[9px] sm:text-[10px] tracking-widest uppercase">
+                                SELESAI
+                              </span>
+                            )
+                          }
+                          if (phase === "GAME") {
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-600/80 border border-purple-400/50 text-white font-bold text-[9px] sm:text-[10px] tracking-widest uppercase">
+                                GAME
+                              </span>
+                            )
+                          }
+                          return (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-600/80 border border-blue-400/50 text-white font-bold text-[9px] sm:text-[10px] tracking-widest uppercase">
+                              KUIS
+                            </span>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        </div>
+      </LayoutGroup>
+    </div>
+  )
+}
+```

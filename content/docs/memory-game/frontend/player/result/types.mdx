@@ -1,0 +1,48 @@
+---
+title: "Types"
+description: "Tipe data hasil pemain dan room."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/types.ts
+
+```ts
+export interface Player {
+  id: string
+  nickname: string
+  avatar: string
+  quizScore?: number
+  isHost: boolean
+  timeSpent?: number
+  questionsAnswered?: number
+  correctAnswers?: number
+  currentQuestion?: number
+  answers?: unknown[]
+  joinedAt?: string
+  isReady?: boolean
+}
+
+export interface Room {
+  code: string
+  hostId: string
+  players: Player[]
+  questions?: unknown[]
+  settings: {
+    questionCount: number
+    totalTimeLimit: number
+  }
+  status: "waiting" | "countdown" | "quiz" | "memory" | "finished"
+  createdAt: string
+  startedAt?: string
+  gameStarted: boolean
+  countdownStartTime?: string
+  countdownDuration?: number
+}
+
+export interface PlayerRanking {
+  rank: number
+  totalScore: number
+  player: Player
+}
+```

@@ -1,0 +1,106 @@
+---
+title: "QuizUtils"
+description: "Utilitas pengacakan soal dan jawaban."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/quiz/components/quiz-utils.tsx
+
+```tsx
+export function shuffleArrayWithIndices<T>(array: T[]): { shuffled: T[], originalIndices: number[] } {
+  const originalIndices = array.map((_, index) => index)
+  const shuffled = [...array]
+  const shuffledIndices = [...originalIndices]
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j: number = Math.floor(Math.random() * (i + 1))
+    const tempElement = shuffled[i]
+    shuffled[i] = shuffled[j]
+    shuffled[j] = tempElement
+    const tempIndex = shuffledIndices[i]
+    shuffledIndices[i] = shuffledIndices[j]
+    shuffledIndices[j] = tempIndex
+  }
+
+  return { shuffled, originalIndices: shuffledIndices }
+}
+
+export function hasNewlineWithContent(text: string): boolean {
+  if (!text) return false
+  const lastNewlineIndex = text.lastIndexOf('\n')
+  if (lastNewlineIndex === -1) return false
+  const afterNewline = text.slice(lastNewlineIndex + 1)
+  return afterNewline.trim().length > 0
+}
+
+export function getQuestionAlignment(text: string, isRTL: boolean): string {
+  if (hasNewlineWithContent(text)) {
+    return 'text-justify'
+  }
+  return isRTL ? 'text-right' : 'text-center'
+}
+
+export function renderTextWithLineBreaks(text: string): React.ReactNode[] {
+  if (!text) return [text]
+  const lines = text.split('\n')
+  return lines.flatMap((line, i) => {
+    if (i === 0) return [line]
+    return [<br key={`br-${i}`} />, line]
+  })
+}
+
+export function getQuestionFontSize(text: string): string {
+  const length = text?.length || 0
+
+  if (length < 80) {
+    return 'text-sm sm:text-base'
+  }
+  return 'text-xs sm:text-sm'
+}
+
+export function needsScrollableContainer(text: string): boolean {
+  return (text?.length || 0) > 400
+}
+
+export function getOptionFontSize(text: string): string {
+  const length = text?.length || 0
+
+  if (length < 50) {
+    return 'text-xs sm:text-sm'
+  } else if (length < 100) {
+    return 'text-xs sm:text-sm'
+  } else {
+    return 'text-xs'
+  }
+}
+
+export function isImageUrl(text: string): boolean {
+  if (!text) return false
+  return /\.(jpeg|jpg|gif|png|webp|svg|bmp)($|\?)/i.test(text) || text.startsWith('data:image/')
+}
+
+export function shuffleQuestionsWithSeed<T>(questions: T[], seedStr: string): T[] {
+  let seed = 0
+  for (let i = 0; i < seedStr.length; i++) {
+    seed = ((seed << 5) - seed) + seedStr.charCodeAt(i)
+    seed |= 0 // Convert to 32bit integer
+  }
+
+  const shuffled = [...questions]
+  // Fisher-Yates shuffle with seeded random
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // Use Math.sin with the seed and index to generate a deterministic random number
+    const x = Math.sin(seed + i) * 10000
+    const r = x - Math.floor(x)
+
+    const j = Math.floor(r * (i + 1))
+
+    const temp = shuffled[i]
+    shuffled[i] = shuffled[j]
+    shuffled[j] = temp
+  }
+
+  return shuffled
+}
+```

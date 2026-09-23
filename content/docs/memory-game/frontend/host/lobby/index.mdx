@@ -1,0 +1,1095 @@
+---
+title: "Host: Lobby"
+description: "Kode lengkap frontend halaman lobby host aplikasi Memory Game."
+---
+
+#### app/host/[roomCode]/lobby/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, useRef, useCallback, Suspense } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Users } from "lucide-react"
+import { roomManager, type Room } from "@/lib/room-manager"
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { useToast } from "@/hooks/use-toast"
+import { useRoom } from "@/hooks/use-room"
+import { useTranslation } from "react-i18next"
+import { supabase } from "@/lib/supabase"
+import getDisplayName from '@/lib/display-name'
+
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import { PixelBackgroundElements } from "@/components/layout/pixel-background-elements"
+import { FullscreenButton } from "@/components/guards/fullscreen-button"
+import { PageTitle } from '@/components/layout/page-title'
+
+import { RedirectingScreen, LoadingScreen, InitializingScreen, RoomNotFoundScreen, LobbyCountdown } from "./components/lobby-screens"
+import { RoomShareCard } from "./components/room-share-card"
+import { PlayerListCard } from "./components/player-list-card"
+import { LobbyDialogs } from "./components/lobby-dialogs"
+
+function LobbyPageContent() {
+  const { t } = useTranslation()
+  const params = useParams()
+  const router = useRouter()
+
+  const [roomCode, setRoomCode] = useState<string | null>(null)
+  const [hostId, setHostId] = useState<string | null>(null)
+  const [quizId, setQuizId] = useState<string | null>(null)
+  const [gameStarted, setGameStarted] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
+  const [qrSize, setQrSize] = useState(800)
+
+  // fullscreen QR (tap pada QR di modal)
+  const qrFullscreenElRef = useRef<HTMLDivElement | null>(null)
+  const [isQrFullscreen, setIsQrFullscreen] = useState(false)
+  const [qrFullscreenFailed, setQrFullscreenFailed] = useState(false)
+
+  const requestFullscreenForQr = async () => {
+    if (typeof document === "undefined") return
+    const el = qrFullscreenElRef.current
+    if (!el) return
+
+    const doc = document as any
+    try {
+      const currentlyFullscreen = !!(
+        document.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement
+      )
+      if (currentlyFullscreen) return
+
+      const anyEl = el as any
+      if (el.requestFullscreen) {
+        await el.requestFullscreen()
+      } else if (anyEl.webkitRequestFullscreen) {
+        anyEl.webkitRequestFullscreen()
+      } else if (anyEl.mozRequestFullScreen) {
+        anyEl.mozRequestFullScreen()
+      } else if (anyEl.msRequestFullscreen) {
+        anyEl.msRequestFullscreen()
+      }
+    } catch (e) {
+      // ignore (browser may block fullscreen on non-user gesture)
+      console.warn("QR fullscreen request failed", e)
+      setQrFullscreenFailed(true)
+      setTimeout(() => setQrFullscreenFailed(false), 2000)
+    }
+  }
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      const doc = document as any
+      const active = !!(
+        document.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement
+      )
+      setIsQrFullscreen(active)
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange)
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange)
+    document.addEventListener("mozfullscreenchange", onFullscreenChange)
+    document.addEventListener("MSFullscreenChange", onFullscreenChange)
+
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange)
+      document.removeEventListener("webkitfullscreenchange", onFullscreenChange)
+      document.removeEventListener("mozfullscreenchange", onFullscreenChange)
+      document.removeEventListener("MSFullscreenChange", onFullscreenChange)
+    }
+  }, [])
+
+  // Invite Groups states
+  const [inviteGroupsOpen, setInviteGroupsOpen] = useState(false)
+  const [userGroups, setUserGroups] = useState<any[]>([])
+  const [loadingGroups, setLoadingGroups] = useState(false)
+  const [invitedGroups, setInvitedGroups] = useState<string[]>([])
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null)
+
+  // Invite Friends states
+  const [inviteFriendsOpen, setInviteFriendsOpen] = useState(false)
+  const [friendsList, setFriendsList] = useState<any[]>([])
+  const [loadingFriends, setLoadingFriends] = useState(false)
+  const [invitedFriends, setInvitedFriends] = useState<string[]>([])
+
+  // Search terms
+  const [friendSearchTerm, setFriendSearchTerm] = useState("")
+  const [groupSearchTerm, setGroupSearchTerm] = useState("")
+
+  // Potong Nama Group Jika Terlalu Panjang
+  const truncateText = (text: string, maxLength: number = 20) => {
+    if (!text) return ''
+    if (text.length <= maxLength) return text
+    return text.substring(0, maxLength) + '...'
+  }
+
+  const [currentPage, setCurrentPage] = useState(0)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [isLeavingLobby, setIsLeavingLobby] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
+  const [playerCountChanged, setPlayerCountChanged] = useState(false)
+  const [playerLeft, setPlayerLeft] = useState(false)
+  const [showKickDialog, setShowKickDialog] = useState(false)
+  const [playerToKick, setPlayerToKick] = useState<any>(null)
+  const lastUpdateTimeRef = useRef<number>(0)
+  const { toast } = useToast()
+  const { room, setRoom, loading } = useRoom(roomCode || "")
+
+
+  const currentRoom = room
+
+  const [inviteToast, setInviteToast] = useState<{
+    open: boolean
+    type: "friend" | "group" | "error"
+    name: string
+    count?: number
+  }>({
+    open: false,
+    type: "friend",
+    name: "",
+    count: 0
+  })
+
+  const showInviteToast = (type: "friend" | "group" | "error", name: string, count?: number) => {
+    setInviteToast({ open: true, type, name, count })
+  }
+
+  const hideInviteToast = () => {
+    setInviteToast({ open: false, type: "friend", name: "", count: 0 })
+  }
+
+  // Fetch current user profile
+  const fetchCurrentUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, username, nickname, fullname, avatar_url')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      if (error) {
+        console.error('Error fetching profile:', error)
+        return null
+      }
+
+      return profile
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+      return null
+    }
+  }
+
+  // Fetch friends from database (table: friendships)
+  const fetchFriends = async () => {
+    try {
+      setLoadingFriends(true)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      if (!profile) return
+
+      const { data: friendshipsAsRequester, error: error1 } = await supabase
+        .from('friendships')
+        .select(`
+          friend:addressee_id (
+            id,
+            username,
+            nickname,
+            fullname,
+            avatar_url
+          )
+        `)
+        .eq('requester_id', profile.id)
+        .eq('status', 'accepted')
+
+      if (error1 && error1.code !== 'PGRST116') throw error1
+
+      const { data: friendshipsAsAddressee, error: error2 } = await supabase
+        .from('friendships')
+        .select(`
+          friend:requester_id (
+            id,
+            username,
+            nickname,
+            fullname,
+            avatar_url
+          )
+        `)
+        .eq('addressee_id', profile.id)
+        .eq('status', 'accepted')
+
+      if (error2 && error2.code !== 'PGRST116') throw error2
+
+      const friendsFromRequester = friendshipsAsRequester?.map((f: any) => f.friend).filter(Boolean) || []
+      const friendsFromAddressee = friendshipsAsAddressee?.map((f: any) => f.friend).filter(Boolean) || []
+
+      const requesterIds = new Set(friendsFromRequester.map((f: any) => f.id))
+      const mutualFriends = friendsFromAddressee.filter((f: any) => requesterIds.has(f.id))
+
+      setFriendsList(mutualFriends)
+      console.log('Friends found:', mutualFriends.length)
+
+    } catch (error) {
+      console.error('Error fetching friends:', error)
+      toast({
+        title: 'Kesalahan',
+        description: 'Gagal memuat daftar teman',
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingFriends(false)
+    }
+  }
+
+  // Invite friend to room - FIXED (pakai game_pin)
+  const inviteFriend = async (friend: any) => {
+    if (invitedFriends.includes(friend.id)) return
+
+    try {
+      const profile = await fetchCurrentUserProfile()
+      if (!profile || !roomCode) {
+        toast({ title: 'Kesalahan', description: 'Data tidak lengkap', variant: "destructive" })
+        return
+      }
+
+      const friendName = getDisplayName({ nickname: friend.nickname, fullname: friend.fullname, username: friend.username }) || 'Teman'
+      const inviterName = getDisplayName({ nickname: profile.nickname, fullname: profile.fullname, username: profile.username }) || 'Host'
+
+      // ✅ STEP 1: Cari atau buat game_session untuk room ini (pakai game_pin)
+      let gameSessionId = null
+
+      // Cari session yang sudah ada berdasarkan game_pin
+      const { data: existingSession } = await supabase
+        .from('game_sessions')
+        .select('id')
+        .eq('game_pin', roomCode)
+        .maybeSingle()
+
+      if (existingSession?.id) {
+        gameSessionId = existingSession.id
+      } else {
+        // Buat session baru dengan game_pin
+        const { data: newSession, error: sessionError } = await supabase
+          .from('game_sessions')
+          .insert({
+            game_pin: roomCode,
+            status: 'waiting',
+            created_at: new Date().toISOString()
+          })
+          .select('id')
+          .single()
+
+        if (sessionError || !newSession?.id) {
+          console.error('[DEBUG] Failed to create game_session:', sessionError)
+          toast({ title: 'Kesalahan', description: 'Gagal menyiapkan sesi', variant: "destructive" })
+          return
+        }
+
+        gameSessionId = newSession.id
+      }
+
+      // ✅ STEP 2: Kirim notifikasi dengan game_session_id sebagai entity_id
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+      const siteOrigin = (process.env.NEXT_PUBLIC_SITE_URL || currentOrigin).replace(/\/$/, '')
+      const playerWaitingUrl = roomCode ? `${siteOrigin}/player/${roomCode}/waiting` : ''
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: friend.id,
+          actor_id: profile.id,
+          type: 'sessionFriend',
+          entity_type: 'session',
+          entity_id: gameSessionId,
+          content: {
+            message: `${inviterName} mengundangmu untuk bermain MemoryQuiz!`,
+            game_pin: roomCode,
+            gameSessionId: gameSessionId,
+            inviterName: inviterName,
+            gameType: 'MemoryQuiz',
+            joinUrl: playerWaitingUrl
+          },
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('[DEBUG] Supabase error:', error)
+        toast({ title: 'Kesalahan', description: error.message, variant: "destructive" })
+        return
+      }
+
+      setInvitedFriends(prev => [...prev, friend.id])
+
+      showInviteToast("friend", friendName)
+
+    } catch (error) {
+      console.error('[DEBUG] Catch error:', error)
+      toast({ title: 'Kesalahan', description: 'Gagal mengundang teman', variant: "destructive" })
+    }
+  }
+
+  // Fetch groups where user is member (with role) - REVISED support dua format
+  const fetchUserGroups = async () => {
+    try {
+      setLoadingGroups(true)
+      const profile = await fetchCurrentUserProfile()
+      if (!profile) return
+
+      setCurrentUserProfile(profile)
+
+      const { data: groups, error } = await supabase
+        .from('groups')
+        .select('id, name, members')
+        .is('deleted_at', null)
+        .or(`members.cs.[{"id":"${profile.id}"}],members.cs.[{"user_id":"${profile.id}"}]`)
+
+      if (error) throw error
+
+      const userGroupsWithRole = groups.filter((group: any) => {
+        const members = group.members || []
+        // Support dua format: user_id (lama) atau id (baru)
+        return members.some((m: any) =>
+          m.user_id === profile.id || m.id === profile.id
+        )
+      }).map((group: any) => {
+        const members = group.members || []
+        // Support dua format untuk mencari user member
+        const userMember = members.find((m: any) =>
+          m.user_id === profile.id || m.id === profile.id
+        )
+        const userRole = userMember?.role || 'member'
+        const membersCount = members.length
+
+        return {
+          ...group,
+          userRole: userRole,
+          members_count: membersCount,
+          members: members  // keep original members for invite logic
+        }
+      })
+
+      setUserGroups(userGroupsWithRole)
+      console.log('[DEBUG] Groups loaded:', userGroupsWithRole.length)
+
+    } catch (error) {
+      console.error('Error fetching groups:', error)
+      toast({
+        title: 'Kesalahan',
+        description: 'Gagal memuat daftar grup',
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingGroups(false)
+    }
+  }
+
+  // Invite group to room - REVISED (pakai game_pin, support dua format members)
+  const inviteGroup = async (group: any) => {
+    console.log('[DEBUG] inviteGroup called for:', group.id, group.name)
+
+    if (invitedGroups.includes(group.id)) {
+      console.log('[DEBUG] Already invited')
+      return
+    }
+
+    try {
+      const profile = await fetchCurrentUserProfile()
+      console.log('[DEBUG] Profile:', profile?.id)
+
+      if (!profile || !roomCode) {
+        toast({ title: 'Kesalahan', description: 'Data tidak lengkap', variant: "destructive" })
+        return
+      }
+
+      const members = group.members || []
+
+      // Filter other members (exclude pengundang) - support dua format
+      const otherMembers = members.filter((m: any) => {
+        const memberId = m.user_id || m.id
+        return memberId !== profile.id
+      })
+
+      // ✅ CEK: Jika hanya 1 member (hanya owner sendiri), tampilkan notifikasi error
+      if (otherMembers.length === 0) {
+        showInviteToast("error", group.name)
+        return
+      }
+
+      // Cari nama pengundang dari member - support dua format
+      const inviterMember = members.find((m: any) => {
+        const memberId = m.user_id || m.id
+        return memberId === profile.id
+      })
+
+      // Ambil nama dari berbagai kemungkinan field
+      const inviterName = getDisplayName({
+        nickname: inviterMember?.nickname || inviterMember?.name,
+        fullname: inviterMember?.fullname || inviterMember?.name,
+        username: inviterMember?.username,
+      }) || getDisplayName({
+        nickname: profile?.nickname,
+        fullname: profile?.fullname,
+        username: profile?.username,
+      }) || 'Host'
+
+      // STEP 1: Cari atau buat game_session untuk room ini (pakai game_pin)
+      let gameSessionId = null
+
+      const { data: existingSession } = await supabase
+        .from('game_sessions')
+        .select('id')
+        .eq('game_pin', roomCode)
+        .maybeSingle()
+
+      if (existingSession?.id) {
+        gameSessionId = existingSession.id
+      } else {
+        const { data: newSession, error: sessionError } = await supabase
+          .from('game_sessions')
+          .insert({
+            game_pin: roomCode,
+            status: 'waiting',
+            created_at: new Date().toISOString()
+          })
+          .select('id')
+          .single()
+
+        if (sessionError || !newSession?.id) {
+          console.error('[DEBUG] Failed to create game_session:', sessionError)
+          toast({ title: 'Kesalahan', description: 'Gagal menyiapkan sesi', variant: "destructive" })
+          return
+        }
+
+        gameSessionId = newSession.id
+      }
+
+      // STEP 2: Buat notifikasi untuk setiap member (kecuali pengundang)
+      const notifications = otherMembers.map((member: any) => {
+        const memberId = member.user_id || member.id
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+        const siteOrigin = (process.env.NEXT_PUBLIC_SITE_URL || currentOrigin).replace(/\/$/, '')
+        const playerWaitingUrl = roomCode ? `${siteOrigin}/join/${roomCode}` : ''
+
+        return {
+          user_id: memberId,
+          actor_id: profile.id,
+          type: 'sessionGroup',
+          entity_type: 'session',
+          entity_id: gameSessionId,
+          content: {
+            message: `${inviterName} mengundang grup ${group.name} untuk bermain MemoryQuiz!`,
+            game_pin: roomCode,
+            groupName: group.name,
+            inviterName: inviterName,
+            gameType: 'MemoryQuiz',
+            joinUrl: playerWaitingUrl
+          },
+          from_group_id: group.id,
+          created_at: new Date().toISOString()
+        }
+      })
+
+      console.log('[DEBUG] Inserting', notifications.length, 'notifications')
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert(notifications)
+        .select('id')
+
+      if (error) {
+        console.error('[DEBUG] Supabase error:', error)
+        toast({ title: 'Kesalahan', description: error.message, variant: "destructive" })
+        return
+      }
+
+      console.log('[DEBUG] Success:', data?.length, 'notifications created')
+      setInvitedGroups(prev => [...prev, group.id])
+
+      showInviteToast("group", group.name, notifications.length)
+
+    } catch (error) {
+      console.error('[DEBUG] Catch error:', error)
+      toast({
+        title: 'Kesalahan',
+        description: 'Gagal mengundang grup',
+        variant: "destructive",
+      })
+    }
+  }
+
+  const playersPerPage = 20
+
+  const totalPages = currentRoom?.players ? Math.ceil(currentRoom.players.length / playersPerPage) : 0
+  const startIndex = currentPage * playersPerPage
+  const currentPlayers = currentRoom?.players?.slice(startIndex, startIndex + playersPerPage) || []
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNavigationAttempt = (url: string) => {
+    setPendingNavigation(url)
+    setShowLeaveDialog(true)
+  }
+
+  const confirmLeave = async () => {
+    if (isLeavingLobby) return
+    setIsLeavingLobby(true)
+    if (roomCode && hostId) {
+      try {
+        if (typeof window !== 'undefined') {
+          const hostLeftChannel = new BroadcastChannel(`host-left-${roomCode}`)
+          hostLeftChannel.postMessage({
+            type: 'host-left',
+            roomCode: roomCode
+          })
+          // Delay close to ensure mobile browsers deliver the message
+          setTimeout(() => hostLeftChannel.close(), 500)
+        }
+
+        await roomManager.deleteRoom(roomCode, hostId)
+        console.log(`[Host Lobby] Room ${roomCode} deleted successfully`)
+      } catch (error) {
+        console.error('[Host Lobby] Error deleting room:', error)
+      }
+    }
+
+    try {
+      await sessionManager.clearSession()
+    } catch (error) {
+      console.error('[Host Lobby] Error clearing session:', error)
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("currentHost")
+    }
+
+    setShowLeaveDialog(false)
+    setPendingNavigation(null)
+
+    router.push(pendingNavigation || "/select-quiz")
+  }
+
+  const cancelLeave = () => {
+    setShowLeaveDialog(false)
+    setPendingNavigation(null)
+  }
+
+  const handleKickPlayer = (player: any) => {
+    setPlayerToKick(player)
+    setShowKickDialog(true)
+  }
+
+  const confirmKickPlayer = async () => {
+    if (!playerToKick || !roomCode || !hostId) {
+      toast({
+        title: 'Kesalahan',
+        description: 'Data tidak lengkap',
+        duration: 3000,
+      })
+      return
+    }
+
+    try {
+      const success = await roomManager.kickPlayer(roomCode, playerToKick.id, hostId)
+
+      if (success) {
+        toast({
+          title: 'Pemain Dikeluarkan',
+          description: `👢 ${playerToKick.nickname} telah dikeluarkan`,
+          duration: 3000,
+        })
+
+        if (typeof window !== 'undefined') {
+          const broadcastChannel = new BroadcastChannel(`kick-${roomCode}`)
+          broadcastChannel.postMessage({
+            type: 'player-kicked',
+            playerId: playerToKick.id,
+            nickname: playerToKick.nickname,
+            roomCode: roomCode
+          })
+          broadcastChannel.close()
+        }
+      } else {
+        toast({
+          title: 'Gagal Mengeluarkan',
+          description: 'Gagal mengeluarkan pemain',
+          duration: 3000,
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Kesalahan',
+        description: 'Terjadi kesalahan saat mengeluarkan pemain',
+        duration: 3000,
+      })
+    }
+
+    setShowKickDialog(false)
+    setPlayerToKick(null)
+  }
+
+  const cancelKickPlayer = () => {
+    setShowKickDialog(false)
+    setPlayerToKick(null)
+  }
+
+  const handleCountdownComplete = useCallback(async () => {
+    if (!roomCode || !hostId) return
+
+    setIsRedirecting(true)
+
+    try {
+      const success = await roomManager.startGame(roomCode, hostId)
+      if (success) {
+        router.replace(`/host/${roomCode}/monitor`)
+      } else {
+        router.replace(`/host/${roomCode}/monitor`)
+      }
+    } catch (error) {
+      router.replace(`/host/${roomCode}/monitor`)
+    }
+  }, [roomCode, hostId, router])
+
+  useEffect(() => {
+    if (!roomCode) return
+  }, [roomCode])
+
+  useEffect(() => {
+    const paramCode = typeof params?.roomCode === "string" ? params.roomCode : Array.isArray(params?.roomCode) ? params.roomCode[0] : null
+
+    const initializeHostSession = async () => {
+      try {
+        const sessionId = sessionManager.getSessionIdFromStorage()
+        if (sessionId) {
+          const sessionData = await sessionManager.getSessionData(sessionId).catch(() => null)
+          if (sessionData && sessionData.user_type === 'host' && sessionData.user_data?.roomCode === paramCode) {
+            try {
+              const { hostId: storedHostId, roomCode: storedRoomCode, quizId: storedQuizId } = sessionData.user_data
+              setHostId(storedHostId)
+              setQuizId(storedQuizId)
+              setRoomCode(storedRoomCode)
+
+              try {
+                await roomManager.getRoom(storedRoomCode)
+              } catch (error) { }
+              return
+            } catch (error) {
+              console.error("Error setting host session logic", error)
+            }
+          }
+        }
+
+        if (typeof window !== 'undefined') {
+          const hostData = localStorage.getItem("currentHost")
+          if (hostData) {
+            try {
+              const { hostId: storedHostId, roomCode: storedRoomCode, quizId: storedQuizId } = JSON.parse(hostData)
+
+              if (storedRoomCode === paramCode) {
+                setHostId(storedHostId)
+                setQuizId(storedQuizId)
+                setRoomCode(storedRoomCode)
+                return
+              }
+            } catch (error) {
+              console.error("Error parsing host data", error)
+            }
+          }
+
+          // SELF-HEALING: Use currentHostId from guard if available
+          const urlParams = new URLSearchParams(window.location.search)
+          const urlHostId = urlParams.get("hostId")
+          const savedHostId = sessionStorage.getItem("currentHostId") || localStorage.getItem("currentHostId") || urlHostId
+
+          if (savedHostId && paramCode) {
+            console.log(`[Lobby] Auto-healing host session for ${paramCode} with hostId ${savedHostId}`)
+            setHostId(savedHostId)
+            setRoomCode(paramCode)
+            return
+          }
+        }
+
+        console.warn(`[Lobby] Access denied for room ${paramCode} - No matching host credentials`)
+        if (paramCode) {
+          router.replace(`/join/${paramCode}`)
+        } else {
+          router.push("/select-quiz")
+        }
+
+      } catch (error) {
+        console.error("Error in host initialization:", error)
+        if (paramCode) {
+          router.replace(`/join/${paramCode}`)
+        } else {
+          router.push("/select-quiz")
+        }
+      }
+    }
+
+    initializeHostSession()
+  }, [params, router])
+
+  useEffect(() => {
+    if (currentRoom?.gameStarted || currentRoom?.status === "countdown" || currentRoom?.status === "quiz") {
+      setGameStarted(true)
+    }
+  }, [currentRoom?.gameStarted, currentRoom?.status])
+
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+  const siteOrigin = (process.env.NEXT_PUBLIC_SITE_URL || currentOrigin).replace(/\/$/, '')
+  const shareUrl = roomCode && siteOrigin ? `${siteOrigin}/join/${roomCode}` : ""
+  const joinUrl = shareUrl
+
+  useEffect(() => {
+    if (showQRModal && typeof window !== 'undefined') {
+      const updateQrSize = () => {
+        const borderPadding = 80
+        const modalWidth = window.innerWidth * 0.98
+        const modalHeight = window.innerHeight * 0.98
+        const availableWidth = modalWidth - borderPadding
+        const availableHeight = modalHeight - borderPadding
+        const size = Math.min(
+          availableWidth * 0.9,
+          availableHeight * 0.9,
+          4000
+        )
+        setQrSize(Math.max(400, Math.floor(size)))
+      }
+      updateQrSize()
+      const resizeTimer = setTimeout(updateQrSize, 100)
+      window.addEventListener('resize', updateQrSize)
+      return () => {
+        window.removeEventListener('resize', updateQrSize)
+        clearTimeout(resizeTimer)
+      }
+    }
+  }, [showQRModal])
+
+  const copyRoomCode = async () => {
+    if (!roomCode) return;
+    const textToCopy = roomCode;
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({
+        title: t('lobby.roomCodeCopied') || t('lobby.shareCodeDesc'),
+        description: t('lobby.shareCodeDesc'),
+      });
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 1500);
+    } catch (err) {
+      console.error("Failed to copy with navigator.clipboard: ", err);
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        toast({
+          title: t('lobby.roomCodeCopied') || t('lobby.shareCodeDesc'),
+          description: t('lobby.shareCodeDesc'),
+        });
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 1500);
+      } catch (execErr) {
+        console.error("Failed to copy with execCommand: ", execErr);
+        toast({
+          title: t('lobby.failedToCopy'),
+          description: t('lobby.failedToCopyDesc'),
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const copyShareLink = async () => {
+    if (!shareUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: t('lobby.shareLinkCopied'),
+        description: t('lobby.shareLinkDesc'),
+      });
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    } catch (err) {
+      console.error("Failed to copy with navigator.clipboard: ", err);
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        toast({
+          title: t('lobby.shareLinkCopied'),
+          description: t('lobby.shareLinkDesc'),
+        });
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 1500);
+      } catch (execErr) {
+        console.error("Failed to copy with execCommand: ", execErr);
+        toast({
+          title: t('lobby.failedToCopy'),
+          description: t('lobby.failedToCopyDesc'),
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const startGame = async () => {
+    if (gameStarted || !currentRoom || !roomCode || !hostId) {
+      return
+    }
+
+    try {
+      const countdownSuccess = await roomManager.startCountdown(roomCode, hostId, 10)
+
+      if (countdownSuccess) {
+        const countdownStartTime = new Date().toISOString()
+        setGameStarted(true)
+
+        const updatedRoom = {
+          ...currentRoom,
+          status: "countdown" as const,
+          countdownStartTime: countdownStartTime,
+          countdownDuration: 10
+        }
+
+        setRoom(updatedRoom)
+
+        if (typeof window !== 'undefined') {
+          try {
+            const countdownChannel = new BroadcastChannel(`countdown-${roomCode}`)
+            const roomChannel = new BroadcastChannel(`room-${roomCode}`)
+
+            const message = {
+              type: 'countdown-started',
+              room: updatedRoom,
+              countdownStartTime: countdownStartTime,
+              countdownDuration: 10
+            }
+
+            countdownChannel.postMessage(message)
+            roomChannel.postMessage(message)
+
+            setTimeout(() => {
+              countdownChannel.close()
+              roomChannel.close()
+            }, 100)
+          } catch (e) {
+            console.error('[Lobby] Broadcast failed:', e)
+          }
+        }
+
+        setTimeout(() => { }, 100)
+      } else {
+        toast({
+          title: t('lobby.failedToStartGame'),
+          description: t('lobby.couldNotStartCountdown'),
+          duration: 3000,
+        })
+      }
+    } catch (error) {
+      toast({
+        title: t('lobby.error'),
+        description: t('lobby.errorStartingGame'),
+        duration: 3000,
+      })
+    }
+  }
+
+  if (currentRoom && (currentRoom.status === "countdown" || (currentRoom.countdownStartTime && !currentRoom.gameStarted))) {
+    return (
+      <LobbyCountdown
+        room={currentRoom}
+        hostId={hostId}
+        onCountdownComplete={handleCountdownComplete}
+      />
+    )
+  }
+
+  if (isRedirecting) {
+    return <RedirectingScreen t={t} />
+  }
+
+  if (!roomCode || (loading && !currentRoom)) {
+    return <LoadingScreen t={t} />
+  }
+
+  if (!currentRoom && !loading && !roomCode) {
+    return <InitializingScreen t={t} />
+  }
+
+  if (!currentRoom && !loading) {
+    return <RoomNotFoundScreen t={t} onBackToSelect={() => router.push("/select-quiz")} />
+  }
+
+  const handleExit = () => {
+    if (quizId) localStorage.setItem("selectedQuizId", quizId)
+    handleNavigationAttempt("/select-quiz")
+  }
+
+  return (
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+
+      <div className={`absolute inset-0 opacity-20 ${showQRModal ? 'blur-md' : ''}`}>
+        <div className="pixel-grid"></div>
+      </div>
+
+      <div className={`absolute inset-0 opacity-10 ${showQRModal ? 'blur-md' : ''}`}>
+        <div className="scanlines"></div>
+      </div>
+
+      <div className={`absolute inset-0 overflow-hidden ${showQRModal ? 'blur-md' : ''}`}>
+        <PixelBackgroundElements />
+      </div>
+
+      <div className={showQRModal ? 'blur-md' : ''}>
+        <PageCornerLogos memoryQuizNoLink />
+      </div>
+
+      <div className={`relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-4 sm:py-6 ${pageCornerLogoContentPadding} ${showQRModal ? 'blur-md' : ''}`}>
+        <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
+          <RoomShareCard
+            t={t}
+            roomCode={roomCode}
+            currentRoom={currentRoom}
+            gameStarted={gameStarted}
+            copiedCode={copiedCode}
+            copiedLink={copiedLink}
+            joinUrl={joinUrl}
+            onCopyRoomCode={copyRoomCode}
+            onCopyShareLink={copyShareLink}
+            onShowQr={() => setShowQRModal(true)}
+            onStartGame={startGame}
+          />
+
+          <PlayerListCard
+            t={t}
+            currentRoom={currentRoom}
+            currentPlayers={currentPlayers}
+            hostId={hostId}
+            roomCode={roomCode}
+            quizId={quizId}
+            gameStarted={gameStarted}
+            playerCountChanged={playerCountChanged}
+            playerLeft={playerLeft}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onInviteGroups={() => { fetchUserGroups(); setInviteGroupsOpen(true) }}
+            onInviteFriends={() => { fetchFriends(); setInviteFriendsOpen(true) }}
+            onExit={handleExit}
+            onStartGame={startGame}
+            onKickPlayer={handleKickPlayer}
+            onNextPage={goToNextPage}
+            onPrevPage={goToPreviousPage}
+          />
+        </div>
+      </div>
+
+      <LobbyDialogs
+        t={t}
+        inviteFriendsOpen={inviteFriendsOpen}
+        setInviteFriendsOpen={setInviteFriendsOpen}
+        loadingFriends={loadingFriends}
+        friendsList={friendsList}
+        friendSearchTerm={friendSearchTerm}
+        setFriendSearchTerm={setFriendSearchTerm}
+        invitedFriends={invitedFriends}
+        onInviteFriend={inviteFriend}
+        inviteGroupsOpen={inviteGroupsOpen}
+        setInviteGroupsOpen={setInviteGroupsOpen}
+        loadingGroups={loadingGroups}
+        userGroups={userGroups}
+        groupSearchTerm={groupSearchTerm}
+        setGroupSearchTerm={setGroupSearchTerm}
+        invitedGroups={invitedGroups}
+        onInviteGroup={inviteGroup}
+        showLeaveDialog={showLeaveDialog}
+        setShowLeaveDialog={setShowLeaveDialog}
+        isLeavingLobby={isLeavingLobby}
+        onCancelLeave={cancelLeave}
+        onConfirmLeave={confirmLeave}
+        showKickDialog={showKickDialog}
+        setShowKickDialog={setShowKickDialog}
+        playerToKick={playerToKick}
+        onConfirmKick={confirmKickPlayer}
+        inviteToast={inviteToast}
+        onHideToast={hideInviteToast}
+        showQRModal={showQRModal}
+        setShowQRModal={setShowQRModal}
+        joinUrl={joinUrl}
+      />
+
+      {!showQRModal && (
+        <FullscreenButton position="bottom-right" offsetX={16} offsetY={16} className="hidden lg:block" />
+      )}
+    </div>
+  )
+}
+
+export default function LobbyPage() {
+  return (
+    <>
+      <PageTitle title={`Lobby Host`} />
+      <Suspense fallback={
+        <div className="min-h-screen relative overflow-hidden flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+          <div className="relative z-10 text-center">
+            <div className="relative inline-block mb-6">
+              <div className="absolute inset-0 bg-linear-to-br from-blue-600 to-purple-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+              <div className="relative bg-linear-to-br from-blue-500 to-purple-500 rounded-lg border-4 border-black shadow-2xl p-6">
+                <div className="w-16 h-16 mx-auto bg-white border-2 border-black rounded flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-black animate-spin" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 pixel-font">Memuat...</h3>
+                <p className="text-[10px] text-white/80 pixel-font">Mempersiapkan lobby</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }>
+        <LobbyPageContent />
+      </Suspense>
+    </>
+  )
+}
+```

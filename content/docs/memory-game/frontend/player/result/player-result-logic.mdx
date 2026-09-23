@@ -1,0 +1,255 @@
+---
+title: "PlayerResultLogic"
+description: "Perhitungan poin dan ranking."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/player-result-logic.ts
+
+```ts
+"use client"
+
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { getRandomAvatar } from "@/lib/avatar-utils"
+import { sortPlayersForLeaderboard } from "@/lib/player-quiz-progress"
+import type { Player, Room, PlayerRanking } from "./types"
+
+export interface FinishSnap {
+  at?: number
+  id: string
+  nickname: string
+  avatar: string
+  quizScore: number
+  questionsAnswered: number
+  timeSpent?: number
+  joinedAt?: string
+}
+
+export interface LocalProgress {
+  quizScore?: number
+  questionsAnswered?: number
+  timeSpent?: number
+}
+
+export interface RankingResolution {
+  status: "ranking" | "no-result"
+  ranking: PlayerRanking | null
+  usedLocalFallback: boolean
+}
+
+export async function resolvePlayerForResult(
+  roomData: Room,
+  roomCode: string,
+  isTryOut: boolean
+): Promise<Player | null> {
+  let player: Player | null = null
+
+  if (isTryOut && typeof window !== 'undefined') {
+    try {
+      const rawHost = localStorage.getItem('currentHost')
+      if (rawHost) {
+        const hostInfo = JSON.parse(rawHost)
+        const hostId = hostInfo.hostId
+        const hostInRoom = roomData.players.find(p => p.id === hostId || p.isHost)
+        if (hostInRoom) {
+          player = hostInRoom
+        } else {
+          const localProgress = localStorage.getItem(`quiz-progress-${roomCode}`)
+          const progress = localProgress ? JSON.parse(localProgress) : null
+          player = {
+            id: hostId,
+            nickname: 'Host',
+            avatar: getRandomAvatar(),
+            quizScore: progress?.quizScore || 0,
+            isHost: true,
+            timeSpent: progress?.timeSpent || 0,
+            questionsAnswered: progress?.questionsAnswered || 0,
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!player) {
+    const storedSessionId = sessionManager.getSessionIdFromStorage()
+    if (storedSessionId) {
+      try {
+        const sessionData = await sessionManager.getSessionData(storedSessionId)
+        if (sessionData && sessionData.user_type === 'player') {
+          player = sessionData.user_data as Player
+
+          if (typeof window !== 'undefined') {
+            try {
+              const raw = localStorage.getItem('currentPlayer')
+              if (raw) {
+                const cp = JSON.parse(raw)
+                if (cp && cp.id && cp.id === player?.id) {
+                  player = {
+                    ...player,
+                    nickname: player?.nickname || cp.nickname,
+                    avatar: player?.avatar || cp.avatar,
+                  }
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Error getting session data:", error)
+      }
+    }
+
+    if (!player && typeof window !== 'undefined') {
+      const playerData = localStorage.getItem("currentPlayer")
+      if (playerData) {
+        player = JSON.parse(playerData)
+      }
+    }
+  }
+
+  return player
+}
+
+export function readLocalResultData(roomCode: string): {
+  finishSnap: FinishSnap | null
+  localProgress: LocalProgress | null
+} {
+  let finishSnap: FinishSnap | null = null
+  let localProgress: LocalProgress | null = null
+
+  try {
+    const raw = typeof window !== 'undefined'
+      ? localStorage.getItem(`quiz-last-result-${roomCode}`)
+      : null
+    if (raw) finishSnap = JSON.parse(raw)
+  } catch {
+    finishSnap = null
+  }
+
+  try {
+    const rawProgress = typeof window !== 'undefined'
+      ? localStorage.getItem(`quiz-progress-${roomCode}`)
+      : null
+    if (rawProgress) localProgress = JSON.parse(rawProgress)
+  } catch {
+    localProgress = null
+  }
+
+  return { finishSnap, localProgress }
+}
+
+export function clearLocalResultData(roomCode: string, clearProgress: boolean): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(`quiz-last-result-${roomCode}`)
+    if (clearProgress) {
+      localStorage.removeItem(`quiz-progress-${roomCode}`)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function buildResultRanking(
+  allPlayers: Player[],
+  roomData: Room,
+  player: Player,
+  finishSnap: FinishSnap | null,
+  localProgress: LocalProgress | null
+): RankingResolution {
+  let players = allPlayers
+
+  if (
+    finishSnap &&
+    finishSnap.id === player.id &&
+    !players.some((p) => p.id === finishSnap.id)
+  ) {
+    players = [
+      ...players,
+      {
+        id: finishSnap.id,
+        nickname: finishSnap.nickname || player.nickname || 'Player',
+        avatar: finishSnap.avatar || player.avatar || getRandomAvatar(),
+        quizScore: finishSnap.quizScore ?? 0,
+        isHost: false,
+        timeSpent: finishSnap.timeSpent ?? 0,
+        questionsAnswered: finishSnap.questionsAnswered ?? 0,
+        joinedAt: finishSnap.joinedAt || new Date(finishSnap.at ?? Date.now()).toISOString(),
+        isReady: true,
+      }
+    ]
+  }
+
+  let sortedPlayers = sortPlayersForLeaderboard(players, roomData)
+
+  const playerIndex = sortedPlayers.findIndex(p =>
+    p.id === player.id ||
+    (p.nickname && player.nickname && p.nickname.trim().toLowerCase() === player.nickname.trim().toLowerCase())
+  )
+
+  if (playerIndex !== -1) {
+    const playerObj = sortedPlayers[playerIndex]
+    const quizScore = localProgress?.quizScore ?? (playerObj.quizScore || 0)
+    const timeSpent = localProgress?.timeSpent != null
+      ? localProgress.timeSpent
+      : playerObj.timeSpent
+    const playerWithCorrectAvatar = {
+      ...playerObj,
+      avatar: player.avatar || playerObj.avatar,
+      quizScore,
+      timeSpent,
+    }
+
+    return {
+      status: "ranking",
+      ranking: {
+        rank: playerIndex + 1,
+        totalScore: quizScore,
+        player: playerWithCorrectAvatar,
+      },
+      usedLocalFallback: false,
+    }
+  }
+
+  if (localProgress) {
+    const fallbackPlayer: Player = {
+      id: player.id || `local-${player.nickname}`,
+      nickname: player.nickname || 'Player',
+      avatar: player.avatar || getRandomAvatar(),
+      quizScore: localProgress.quizScore || 0,
+      isHost: false,
+      timeSpent: localProgress.timeSpent || 0,
+      questionsAnswered: localProgress.questionsAnswered || 0,
+      joinedAt: new Date().toISOString(),
+      isReady: true,
+    }
+
+    sortedPlayers = sortPlayersForLeaderboard([...players, fallbackPlayer], roomData)
+    const fallbackIndex = sortedPlayers.findIndex(p => p.id === (player.id || `local-${player.nickname}`))
+
+    if (fallbackIndex !== -1) {
+      const playerObj = sortedPlayers[fallbackIndex]
+      return {
+        status: "ranking",
+        ranking: {
+          rank: fallbackIndex + 1,
+          totalScore: playerObj.quizScore || 0,
+          player: playerObj,
+        },
+        usedLocalFallback: true,
+      }
+    }
+  }
+
+  return {
+    status: "no-result",
+    ranking: null,
+    usedLocalFallback: !!localProgress,
+  }
+}
+```

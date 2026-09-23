@@ -1,0 +1,54 @@
+---
+title: "GameModeButtons"
+description: "Pilihan mode game (belajar / tryout)."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/quiz-settings/components/game-mode-buttons.tsx
+
+```tsx
+import { Zap } from "lucide-react"
+
+interface GameModeButtonsProps {
+  value: "easy" | "medium" | "hard"
+  onChange: (value: "easy" | "medium" | "hard") => void
+}
+
+const MODE_BUTTONS: { key: "easy" | "medium" | "hard"; label: string; activeClass: string }[] = [
+  { key: "easy", label: "Mudah", activeClass: "bg-green-500 text-white shadow-[2px_2px_0px_rgba(0,0,0,0.5)]" },
+  { key: "medium", label: "Sedang", activeClass: "bg-yellow-500 text-white shadow-[2px_2px_0px_rgba(0,0,0,0.5)]" },
+  { key: "hard", label: "Sulit", activeClass: "bg-red-500 text-white shadow-[2px_2px_0px_rgba(0,0,0,0.5)]" },
+]
+
+export function GameModeButtons({ value, onChange }: GameModeButtonsProps) {
+  return (
+    <div className="bg-white border-2 border-black rounded p-2 sm:p-3 pixel-setting-section sm:col-span-2">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-5 h-5 bg-yellow-400 border border-black rounded flex items-center justify-center shrink-0">
+          <Zap className="h-3 w-3 text-black" />
+        </div>
+        <span className="font-bold text-[8px] sm:text-[9px] pixel-font bg-yellow-400 border border-black rounded px-2 py-0.5">
+          MODE GAME
+        </span>
+      </div>
+
+      <div className="flex gap-2">
+        {MODE_BUTTONS.map(mode => (
+          <button
+            key={mode.key}
+            type="button"
+            onClick={() => onChange(mode.key)}
+            className={`
+              flex-1 py-2 px-2 border-2 border-black rounded-lg font-bold text-[9px] sm:text-[10px] pixel-font transition-all duration-200
+              ${value === mode.key ? mode.activeClass : 'bg-white text-black hover:bg-gray-100'}
+            `}
+          >
+            {mode.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+```

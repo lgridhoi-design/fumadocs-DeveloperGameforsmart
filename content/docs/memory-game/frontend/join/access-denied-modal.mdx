@@ -1,0 +1,37 @@
+---
+title: "AccessDeniedModal"
+description: "Modal peringatan akses ditolak."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/join/components/access-denied-modal.tsx
+
+```tsx
+interface AccessDeniedModalProps {
+  onClose: () => void
+}
+
+export function AccessDeniedModal({ onClose }: AccessDeniedModalProps) {
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-sm bg-neutral-900 border-4 border-black text-center p-6 shadow-[8px_8px_0px_#000]">
+        <div className="h-1 bg-red-600 w-full mb-4 shadow-[0_0_8px_#dc2626]" />
+        <h2 className="text-xl font-bold text-red-500 pixel-font mb-4 uppercase tracking-wider" style={{ textShadow: '2px 2px 0px #000' }}>
+          Akses Ditolak
+        </h2>
+        <p className="text-white pixel-font-sm text-xs leading-relaxed mb-6" style={{ textShadow: '1px 1px 0px #000' }}>
+          Anda tidak terdaftar dalam kompetisi ini. Hanya peserta terdaftar yang bisa masuk.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-2 bg-red-600 hover:bg-red-700 active:translate-y-1 active:shadow-[2px_2px_0px_#000] text-white border-2 border-black font-bold pixel-font text-sm transition-all duration-100 cursor-pointer"
+          style={{ boxShadow: '4px 4px 0px #000' }}
+        >
+          KEMBALI KE BERANDA
+        </button>
+      </div>
+    </div>
+  )
+}
+```

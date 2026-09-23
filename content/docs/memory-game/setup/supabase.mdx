@@ -1,0 +1,172 @@
+---
+title: Supabase & Environment
+description: "Membuat satu project Supabase, mengisi .env.local, dan menjalankan skema SQL (sessions, participants, quizzes)."
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Supabase & Environment
+
+Tahap ini menyiapkan **satu project Supabase** dan seluruh kredensial. Versi minimal ini sengaja memakai satu database saja — semua tabel game (sesi, pemain, kuis) hidup di project yang sama, dan operasinya memakai anon key yang sudah dibuka via RLS (lihat bab [Database](/docs/memory-game/database)).
+
+---
+
+## 1. Membuat Satu Project Supabase
+
+1. Login ke `https://supabase.com/dashboard`.
+2. **Create new project**, beri nama misalnya `memory-quiz-main`.
+3. Catat region terdekat (bukan wajib, tapi mengurangi latensi Realtime).
+
+<Callout>
+Versi asli proyek memakai 2 project terpisah (utama + players/realtime). Di sini disederhanakan menjadi satu project agar langsung berfungsi tanpa konfigurasi tambahan.
+</Callout>
+
+---
+
+## 2. Mengambil API Credentials
+
+Project punya kunci yang diambil dari **Settings → API**:
+
+| Kunci | Lokasi | Dipakai untuk |
+| --- | --- | --- |
+| `Project URL` | Settings → API | Endpoint REST/gRPC |
+| `anon / public key` | Settings → API (tab API keys) | Dikirim dari browser, aman dibatasi RLS |
+
+Semua operasi di tutorial ini (termasuk Route Handler) memakai **anon key** — tidak ada `service_role` yang perlu diisi.
+
+---
+
+## 3. Menulis `.env.local`
+
+Salin variabel di bawah ke `.env.local` (diabaikan git). Empat variabel yang benar-benar dipakai kode:
+
+```plaintext
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# URL site — dipakai redirect OAuth dan metadata
+NEXT_PUBLIC_SITE_URL=http://localhost:3002
+```
+
+Pemetaan ke kode sumber:
+
+| Variabel | Dipakai di | Catatan |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` + `_ANON_KEY` | `lib/supabase.ts`, `lib/supabase-server.ts`, [Login](/docs/memory-game/login) | Satu client untuk semua operasi |
+| `NEXT_PUBLIC_SITE_URL` | `app/layout.tsx` (metadata) | Juga untuk redirect Google OAuth |
+
+### Placeholder anti-crash
+
+`lib/supabase.ts` memakai nilai placeholder saat env belum diisi, supaya `npm run build` tidak gagal meski kredensial kosong:
+
+```ts
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+
+export const isSupabaseConfigured = () => {
+  const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL
+  const hasKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const isValidUrl = hasUrl && !process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')
+  const isValidKey = hasKey && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.includes('placeholder')
+  return isValidUrl && isValidKey
+}
+```
+
+Pola ini membuat app **tidak crash** saat pertama dijalankan tanpa env — halaman hanya menampilkan error fetch, bukan white screen.
+
+---
+
+## 4. Meng-ekspos Env di Build (next.config.mjs)
+
+Next.js 14 hanya memasukkan variabel berprefix `NEXT_PUBLIC_` ke client secara otomatis dari `.env.local`. `next.config.mjs` menegaskan ulang variabel penting agar selalu tersedia di build:
+
+```js
+env: {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+},
+```
+
+---
+
+## 5. Skema SQL
+
+Buka **Supabase Dashboard → SQL Editor**, tempel & jalankan skrip berikut sekaligus. Ini isi lengkap database untuk game berfungsi (penjelasan tiap tabel ada di bab [Database](/docs/memory-game/database)):
+
+```sql
+-- 1. generate_xid: id 20 karakter tanpa ekstensi uuid
+CREATE OR REPLACE FUNCTION generate_xid() RETURNS TEXT AS $$
+DECLARE
+    chars TEXT := '0123456789abcdefghijklmnopqrstuv';
+    result TEXT := '';
+    i INTEGER;
+BEGIN
+    FOR i IN 1..20 LOOP
+        result := result || substr(chars, floor(random() * 32)::int + 1, 1);
+    END LOOP;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. sessions: room + state game
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY DEFAULT generate_xid(),
+    game_pin TEXT NOT NULL UNIQUE,
+    host_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'waiting',
+    questions JSONB DEFAULT '[]',
+    countdown_started_at TIMESTAMPTZ,
+    countdown_duration_seconds INTEGER DEFAULT 10,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    CONSTRAINT valid_status CHECK (status IN ('waiting', 'active', 'finished'))
+);
+
+-- 3. participants: satu baris per pemain
+CREATE TABLE participants (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    game_pin TEXT NOT NULL,
+    nickname TEXT NOT NULL,
+    avatar TEXT DEFAULT '',
+    score INTEGER DEFAULT 0,
+    questions_answered INTEGER DEFAULT 0,
+    answers JSONB DEFAULT '[]',
+    last_heartbeat TIMESTAMPTZ,
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(game_pin, nickname)
+);
+
+-- 4. quizzes: daftar kuis + soal
+CREATE TABLE quizzes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    difficulty TEXT NOT NULL,
+    questions JSONB DEFAULT '[]'
+);
+
+-- 5. Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE participants;
+
+-- 6. RLS terbuka (data game non-sensitif)
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE participants ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all sessions" ON sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all participants" ON participants FOR ALL USING (true) WITH CHECK (true);
+```
+
+---
+
+## 6. Verifikasi
+
+```bash
+grep -c "NEXT_PUBLIC" .env.local   # harus >= 2
+npm run build
+npm run dev                        # buka http://localhost:3002
+```
+
+Jika semua berjalan tanpa error, lanjut ke [Struktur Folder](/docs/memory-game/setup/struktur-folder) — peta direktori yang akan diisi di bab [Frontend](/docs/memory-game/frontend) dan seterusnya.

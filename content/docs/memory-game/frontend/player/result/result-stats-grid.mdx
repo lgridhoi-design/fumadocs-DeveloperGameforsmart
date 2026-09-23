@@ -1,0 +1,96 @@
+---
+title: "ResultStatsGrid"
+description: "Grid statistik benar/salah/poin."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/result-stats-grid.tsx
+
+```tsx
+"use client"
+
+import { Medal, Star, CheckCircle, Clock } from "lucide-react"
+
+interface ResultStatsGridProps {
+  rank: number
+  totalScore: number
+  correctCount: number
+  totalQuestions: number
+  formattedTime: string
+  isFinished: boolean
+}
+
+const cardClasses = "bg-gradient-to-br backdrop-blur-sm border rounded-lg pt-4 pb-5 px-3 sm:pt-5 sm:pb-6 sm:px-4 text-center transition-all hover:scale-105 flex flex-col justify-between items-center h-full min-h-[140px] sm:min-h-[160px]"
+
+export function ResultStatsGrid({
+  rank,
+  totalScore,
+  correctCount,
+  totalQuestions,
+  formattedTime,
+  isFinished,
+}: ResultStatsGridProps) {
+  return (
+    <div className="max-w-3xl mx-auto mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 -mt-10">
+
+        <div className={`${cardClasses} from-purple-500/20 to-pink-600/20 border-purple-400/30 hover:border-purple-400/60`}>
+          <div className="flex flex-col items-center w-full">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500/30 rounded-full flex items-center justify-center">
+                <Medal className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-300">
+              {isFinished ? `#${rank}` : "?"}
+            </div>
+          </div>
+          <p className="text-[10px] sm:text-xs text-purple-200/80 uppercase mt-2 tracking-wider w-full text-center">PERINGKAT</p>
+        </div>
+
+        <div className={`${cardClasses} from-yellow-500/20 to-amber-600/20 border-yellow-400/30 hover:border-yellow-400/60`}>
+          <div className="flex flex-col items-center w-full">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500/30 rounded-full flex items-center justify-center">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-yellow-300">
+              {isFinished ? totalScore : "?"}
+            </div>
+          </div>
+          <p className="text-[10px] sm:text-xs text-yellow-200/80 uppercase mt-2 tracking-wider w-full text-center">SKOR</p>
+        </div>
+
+        <div className={`${cardClasses} from-emerald-500/20 to-green-600/20 border-emerald-400/30 hover:border-emerald-400/60`}>
+          <div className="flex flex-col items-center w-full">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/30 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-300">
+              {isFinished ? `${correctCount}/${totalQuestions}` : "?"}
+            </div>
+          </div>
+          <p className="text-[10px] sm:text-xs text-emerald-200/80 uppercase mt-2 tracking-wider w-full text-center">BENAR</p>
+        </div>
+
+        <div className={`${cardClasses} from-cyan-500/20 to-blue-600/20 border-cyan-400/30 hover:border-cyan-400/60`}>
+          <div className="flex flex-col items-center w-full">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-cyan-500/30 rounded-full flex items-center justify-center">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-300">{formattedTime}</div>
+          </div>
+          <p className="text-[10px] sm:text-xs text-cyan-200/80 uppercase mt-2 tracking-wider w-full text-center">WAKTU</p>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+```

@@ -1,0 +1,226 @@
+---
+title: Tailwind CSS & Styling
+description: Memasang Tailwind CSS versi 4 (config berbasis CSS), shadcn/ui, font retro pixel, dan tema dark/light.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Tailwind CSS & Styling
+
+Proyek asli memakai **Tailwind CSS v4** — versi terbaru yang sudah **tidak lagi memakai `tailwind.config.js`**. Semua konfigurasi ditulis langsung di CSS lewat directive `@import`, `@theme`, dan `@custom-variant`.
+
+---
+
+## 1. Install Dependency
+
+```bash
+npm install -D tailwindcss @tailwindcss/postcss postcss tw-animate-css
+npm install tailwindcss-animate
+```
+
+`tw-animate-css` menyediakan class animasi shadcn/ui; `tailwindcss-animate` menambahkan varian animasi Tailwind. Keduanya ada di `devDependencies` proyek asli.
+
+---
+
+## 2. PostCSS Config
+
+Ganti `postcss.config.mjs` dengan hanya satu plugin — tidak perlu `autoprefixer` lagi:
+
+```js
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    '@tailwindcss/postcss': {},
+  },
+}
+
+export default config
+```
+
+<Callout title="Penting">
+Ini perbedaan utama Tailwind v4: berkas `tailwind.config.{js,ts}` **dihapus**. Plugin `autoprefixer` juga tidak lagi dibutuhkan. Jangan ikuti tutorial lama yang masih memakai `content: [...]` — di v4 content dideteksi otomatis.
+</Callout>
+
+---
+
+## 3. Globals.css — Entry Point
+
+Buka `app/globals.css` dan ganti isinya. Urutannya:
+
+```css
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+```
+
+- `@import "tailwindcss"` — memuat seluruh engine Tailwind v4 (utilities, base, theme).
+- `@import "tw-animate-css"` — memuat animasi `animate-in`/`animate-out` milik shadcn (dipakai Dialog, Toast, dsb).
+- `@custom-variant dark (&:is(.dark *))` — mengubah varian `dark:` agar aktif saat ada elemen induk ber-class `.dark` (di luar HTML). Ini cara v4 menggantikan `darkMode: "class"` dari v3.
+
+---
+
+## 4. Font Retro — Press Start 2P & LPMQ Misbah
+
+Game bertema pixel-art memakai font **Press Start 2P**, dan font **LPMQ Isep Misbah** untuk menampilkan teks Arab (RTL). Kedua `.ttf` diletakkan di `public/font/` lalu didaftarkan lewat `@font-face` di awal `globals.css`:
+
+```css
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/font/PressStart2P.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LPMQ Misbah';
+  src: url('/font/LPMQ_IsepMisbah.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.pixel-font {
+  font-family: var(--font-pixel);
+}
+```
+
+Lalu definisikan variabel font di tema:
+
+```css
+:root {
+  --font-pixel: 'Press Start 2P', cursive;
+  --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Courier New', monospace;
+}
+```
+
+Saat bahasa Arab aktif, `--font-pixel` diganti agar karakter Latin tetap naik — lihat bagian [i18n & RTL](/docs/memory-game/frontend) di bab Frontend.
+
+---
+
+## 5. Tema Warna — CSS Variables + oklch
+
+Tailwind v4 memakai **CSS variables** untuk warna. Proyek asli mengikuti pola shadcn tapi dengan palet khusus gim (amber/green/hijau) dan format warna **`oklch`** (lebih akurat untuk gamut layar modern).
+
+```css
+:root {
+  /* Light */
+  --background: oklch(1 0 0);            /* putih */
+  --foreground: oklch(0.3 0 0);          /* abu gelap teks */
+  --primary: oklch(0.65 0.15 45);        /* amber-warm untuk aksi utama */
+  --secondary: oklch(0.75 0.2 120);      /* hijau terang aksen */
+  --muted: oklch(0.97 0.01 85);
+  --border: oklch(0.9 0.01 85);
+  --radius: 0.75rem;
+  /* + sidebar, chart, accent, destructive, ring */
+}
+
+.dark {
+  /* Dark: kebalikan, background oklch(0.1 0 0) dst */
+}
+```
+
+Agar class Tailwind seperti `bg-background`, `text-foreground`, `border-border` bisa memakai variabel ini, hubungkan lewat `@theme inline`:
+
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --radius-sm: calc(var(--radius) - 4px);
+  /* dst */
+}
+```
+
+<Callout title="`@theme` vs `@theme inline`">
+`@theme` mengekspor variabel ke kode (bisa dipakai JS/class langsung); `inline` menyalin nilainya ke utility agar tidak bergantung runtime. Untuk variabel yang berubah antara light/dark (sidebar, chart, card), pakai `inline`.
+</Callout>
+
+---
+
+## 6. shadcn/ui
+
+Setelah Tailwind v4 + globals siap, install **shadcn/ui** (basis komponen Radix + styling):
+
+```bash
+npx shadcn@latest init
+```
+
+Saat prompt pilih: **style `new-york`**, **base color `neutral`**, **css variables: yes**. Hasilnya file `components.json`:
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+```
+
+Catatan: level `router.cacheComponents=false` tidak diset di proyek (App Router, `rsc: true`).
+
+Install komponen yang dipakai game:
+
+```bash
+npx shadcn@latest add button card input label badge slider select dialog
+npx shadcn@latest add alert-dialog separator progress tooltip toast carousel
+```
+
+`@/lib/utils` (fungsi `cn`) dibuat otomatis oleh shadcn. Proyek asli juga menambahkan package Radix lengkap via `@radix-ui/*` di `package.json` karena generator v0 — tapi untuk hasil setara, komponen di atas via shadcn cukup.
+
+---
+
+## 7. Base Styles Kustom
+
+Di `@layer base` proyek asli menetapkan styling global karakter gim:
+
+```css
+@layer base {
+  * { @apply border-border outline-ring/50; }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-pixel);
+  }
+
+  /* Input & form memakai font sistem agar mudah dibaca */
+  input, textarea, select, option, datalist { font-family: var(--font-system); }
+
+  h1, h2, h3, h4, h5, h6, p, span, div, li, a { font-family: var(--font-pixel); }
+  code, pre { font-family: var(--font-mono); }
+}
+```
+
+Selain itu `globals.css` berisi animasi pixel custom (`fall-down`, `pixel-float`, `button-pulse`, `champion-glow`, dsb.) dan class utility retro (`.pixel-card`, `.pixel-button`, `.scanlines`) — semua konsisten dengan tema pixel-art.
+
+---
+
+## Verify
+
+```bash
+npm run dev
+```
+
+Cek di browser: font `Press Start 2P` tampil di heading, `dark:` bekerja saat `<html class="dark">`, dan komponen shadcn (button, dialog) memiliki animasi. Lanjut ke [Supabase & Environment](/docs/memory-game/setup/supabase).

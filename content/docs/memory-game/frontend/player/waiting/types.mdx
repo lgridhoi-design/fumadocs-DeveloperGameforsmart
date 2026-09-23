@@ -1,0 +1,23 @@
+---
+title: "Types"
+description: "Tipe data pemain dan room pada waiting room."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/waiting/components/types.ts
+
+```ts
+export interface WaitingPlayerInfo {
+  nickname: string
+  avatar: string
+  playerId: string
+}
+
+export interface WaitingRoomPlayer {
+  id: string
+  nickname: string
+  avatar?: string
+  isHost?: boolean
+}
+```

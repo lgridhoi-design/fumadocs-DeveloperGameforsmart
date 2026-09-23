@@ -1,0 +1,349 @@
+---
+title: "SelectQuizContent"
+description: "Komponen utama daftar kuis: pencarian, filter, pagination, dan dialog detail."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/select-quiz/SelectQuizContent.tsx
+
+```tsx
+"use client"
+
+import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useQuizzes, useQuizzesPaginated, preloadCategoryImages } from "@/hooks/use-quiz"
+import languagesData from "@/data/languages.json"
+import { supabase, quizApi, Quiz } from "@/lib/supabase"
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import { PixelBackgroundElements } from "@/components/layout/pixel-background-elements"
+import { categories, getCategoryColor } from "./components/categories"
+import { QuizFilterBar } from "./components/quiz-filter-bar"
+import { QuizCard, QuizCardSkeleton } from "./components/quiz-card"
+import { QuizDetailDialog } from "./components/quiz-detail-dialog"
+import { QuizPagination } from "./components/pagination"
+import { EmptyState } from "./components/empty-state"
+
+interface SelectQuizContentProps {
+  initialQuizzes?: Quiz[]
+  initialTotalCount?: number
+  initialTotalPages?: number
+}
+
+export default function SelectQuizContent({
+  initialQuizzes = [],
+  initialTotalCount = 0,
+  initialTotalPages = 1
+}: SelectQuizContentProps) {
+  const router = useRouter()
+  const [searchInput, setSearchInput] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      const width = window.innerWidth
+      if (width >= 1280) setItemsPerPage(10) // xl: 5 cols × 2 rows
+      else if (width >= 1024) setItemsPerPage(8) // lg: 4 cols × 2 rows
+      else if (width >= 768) setItemsPerPage(9) // md: 3 cols × 3 rows
+      else if (width >= 640) setItemsPerPage(6) // sm: 2 cols × 3 rows
+      else setItemsPerPage(4) // mobile: 1 col × 4 rows
+    }
+    updateItemsPerPage()
+    window.addEventListener('resize', updateItemsPerPage)
+    return () => window.removeEventListener('resize', updateItemsPerPage)
+  }, [])
+
+  const [favoriteQuizIds, setFavoriteQuizIds] = useState<string[]>([])
+  const [activeTab, setActiveTab] = useState<"quiz" | "my-quiz" | "favorite">("quiz")
+  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null)
+  const [myQuizzes, setMyQuizzes] = useState<any[]>([])
+  const [loadingMyQuizzes, setLoadingMyQuizzes] = useState(false)
+  const [dialogLoading, setDialogLoading] = useState(false)
+
+  const [selectedQuiz, setSelectedQuiz] = useState<any>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  const availableLanguages = useMemo(() => {
+    const usedLanguageCodes = ['ar', 'en', 'id'];
+    return languagesData
+      .filter((lang: any) => usedLanguageCodes.includes(lang.iso_639_1))
+      .map((lang: any) => ({
+        key: lang.iso_639_1,
+        name: lang.name,
+        name_local: lang.name_local || lang.name,
+        primaryCountry: lang.primaryCountry
+      }))
+  }, [])
+
+  const [languageFilter, setLanguageFilter] = useState<string>('all')
+
+  const {
+    quizzes: paginatedQuizzes,
+    totalPages: paginatedTotalPages,
+    loading: paginatedLoading,
+  } = useQuizzesPaginated({
+    page: currentPage,
+    limit: itemsPerPage,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    searchQuery: searchTerm || undefined,
+    language: languageFilter !== 'all' ? languageFilter : undefined,
+    enabled: activeTab === "quiz"
+  })
+
+  const displayPaginatedQuizzes = (currentPage === 1 && searchTerm === "" && categoryFilter === "all" && languageFilter === "all" && paginatedQuizzes.length === 0)
+    ? initialQuizzes
+    : paginatedQuizzes
+
+  const { quizzes: allQuizzes, loading: allQuizzesLoading } = useQuizzes({
+    enabled: activeTab === "favorite"
+  })
+
+  const getCategoryBgImage = (category: string) => {
+    const categoryLower = category?.toLowerCase() || 'general';
+    const categoryData = categories.find(cat => cat.value === categoryLower);
+    return categoryData?.bgImage || categories[0].bgImage;
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const categoryLower = category?.toLowerCase() || 'general';
+    const categoryData = categories.find(cat => cat.value === categoryLower);
+    return categoryData?.icon || categories[1].icon;
+  };
+
+  const [totalFavorites, setTotalFavorites] = useState<Record<string, number>>({})
+
+  const fetchTotalFavorites = async (quizId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('favorite_quiz')
+        .filter('favorite_quiz->favorites', 'cs', `["${quizId}"]`)
+
+      if (error) {
+        console.error('❌ Error:', error)
+        return
+      }
+
+      setTotalFavorites(prev => ({ ...prev, [quizId]: data?.length || 0 }))
+    } catch (err) {
+      console.error('❌ Error in fetchTotalFavorites:', err)
+    }
+  }
+
+  const getQuizBackgroundImage = (quiz: any): string => {
+    if (!quiz) return getCategoryBgImage('general');
+    const img = quiz.image_url || quiz.imageUrl || quiz.cover_image || quiz.coverImage ||
+      quiz.banner_image || quiz.bannerImage || quiz.thumbnail || quiz.thumbnailUrl ||
+      quiz.metadata?.image_url || quiz.metadata?.cover_image;
+    return img || getCategoryBgImage(quiz.category || 'General');
+  };
+
+  const normalizeCategory = (category: string | undefined | null): string => {
+    if (!category) return 'General'
+    const categoryLower = category.toLowerCase().trim()
+    const categoryMap: { [key: string]: string } = {
+      'general': 'General', 'science': 'Science', 'mathematics': 'Mathematics', 'math': 'Mathematics',
+      'history': 'History', 'geography': 'Geography', 'language': 'Language', 'technology': 'Technology',
+      'sports': 'Sports', 'entertainment': 'Entertainment', 'business': 'Business'
+    }
+    return categoryMap[categoryLower] || 'General'
+  }
+
+  const executeSearch = () => setSearchTerm(searchInput)
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") executeSearch() }
+
+  useEffect(() => {
+    const categoryImageUrls = categories.map(cat => cat.bgImage).filter((url): url is string => !!url)
+    preloadCategoryImages(categoryImageUrls)
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+    const fetchUserProfileAndFavorites = async (providedUserId?: string | null) => {
+      try {
+        const targetUserId = providedUserId ?? (await supabase.auth.getUser()).data.user?.id
+        if (!targetUserId) {
+          if (isMounted) { setFavoriteQuizIds([]); setCurrentUserProfileId(null); }
+          return
+        }
+        const { data, error } = await supabase.from("profiles").select("id, favorite_quiz").eq("auth_user_id", targetUserId).single()
+        if (error) throw error
+        const favorites = Array.isArray(data?.favorite_quiz?.favorites) ? data.favorite_quiz.favorites : []
+        if (isMounted) { setCurrentUserProfileId(data?.id || null); setFavoriteQuizIds(favorites); }
+      } catch (err) { console.error("Error fetching user profile:", err) }
+    }
+    fetchUserProfileAndFavorites()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      fetchUserProfileAndFavorites(session?.user?.id ?? null)
+    })
+    return () => { isMounted = false; subscription.unsubscribe() }
+  }, [])
+
+  useEffect(() => {
+    if (!currentUserProfileId) { setMyQuizzes([]); return }
+    const fetchMyQuizzes = async () => {
+      try {
+        setLoadingMyQuizzes(true)
+        const userQuizzes = await quizApi.getQuizzesByCreator(currentUserProfileId!)
+        setMyQuizzes(userQuizzes)
+      } catch (err) { console.error("Error fetching my quizzes:", err) }
+      finally { setLoadingMyQuizzes(false) }
+    }
+    fetchMyQuizzes()
+  }, [currentUserProfileId])
+
+  const filteredQuizzesForClientPagination = useMemo(() => {
+    let tabFilteredQuizzes: any[] = []
+    if (activeTab === "my-quiz") tabFilteredQuizzes = myQuizzes
+    else if (activeTab === "favorite") {
+      const favorites = [...allQuizzes, ...myQuizzes].filter(quiz => favoriteQuizIds.includes(quiz.id))
+      tabFilteredQuizzes = favorites.filter((quiz, index, self) => index === self.findIndex((q) => q.id === quiz.id))
+    } else return []
+
+    return tabFilteredQuizzes.filter((quiz) => {
+      const matchesSearch = searchTerm === "" || quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
+      let matchesCategory = true
+      if (categoryFilter !== "all") {
+        matchesCategory = normalizeCategory(quiz.category) === normalizeCategory(categoryFilter)
+      }
+      let matchesLanguage = true
+      if (languageFilter !== "all") {
+        const quizLang = (quiz.language || "").toLowerCase()
+        const filterLang = languageFilter.toLowerCase()
+        matchesLanguage = quizLang === filterLang ||
+          quizLang.startsWith(filterLang) ||
+          filterLang.startsWith(quizLang)
+      }
+      return matchesSearch && matchesCategory && matchesLanguage
+    })
+  }, [allQuizzes, myQuizzes, searchTerm, categoryFilter, languageFilter, activeTab, favoriteQuizIds])
+
+  const isServerPaginated = activeTab === "quiz"
+  const totalPages = isServerPaginated ? paginatedTotalPages : Math.ceil(filteredQuizzesForClientPagination.length / itemsPerPage)
+
+  const currentQuizzes = useMemo(() => {
+    if (isServerPaginated) {
+      return displayPaginatedQuizzes
+    }
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredQuizzesForClientPagination.slice(startIndex, startIndex + itemsPerPage)
+  }, [isServerPaginated, displayPaginatedQuizzes, filteredQuizzesForClientPagination, currentPage])
+
+  const loading = isServerPaginated ? paginatedLoading : (activeTab === "my-quiz" ? loadingMyQuizzes : allQuizzesLoading)
+
+  useEffect(() => { setCurrentPage(1) }, [searchTerm, categoryFilter, languageFilter, activeTab])
+
+  const handleQuizClick = async (quiz: any) => {
+    setDialogLoading(true)
+    setSelectedQuiz(quiz)
+    setDialogOpen(true)
+
+    await fetchTotalFavorites(quiz.id)
+
+    setDialogLoading(false)
+  }
+
+  const handleStartQuiz = () => {
+    if (selectedQuiz) {
+      localStorage.setItem("selectedQuizId", selectedQuiz.id)
+      setDialogOpen(false)
+      router.push("/quiz-settings")
+    }
+  }
+
+  const handleTryOutQuiz = () => {
+    if (selectedQuiz) {
+      localStorage.setItem("selectedQuizId", selectedQuiz.id)
+      setDialogOpen(false)
+      router.push("/quiz-settings?mode=tryout")
+    }
+  }
+
+  const toggleFavorite = async (quizId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!currentUserProfileId) return
+    const isFavorite = favoriteQuizIds.includes(quizId)
+    const updatedFavorites = isFavorite ? favoriteQuizIds.filter(id => id !== quizId) : [...favoriteQuizIds, quizId]
+    const { error } = await supabase.from("profiles").update({ favorite_quiz: { favorites: updatedFavorites } }).eq("id", currentUserProfileId)
+    if (!error) setFavoriteQuizIds(updatedFavorites)
+  }
+
+  const resetFilters = () => { setSearchInput(""); setSearchTerm(""); setCategoryFilter("all"); setLanguageFilter("all"); setActiveTab("quiz") }
+
+  return (
+    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+      <div className="absolute inset-0 opacity-20"><div className="pixel-grid"></div></div>
+      <div className="absolute inset-0 opacity-10"><div className="scanlines"></div></div>
+      <div className="absolute inset-0 overflow-hidden"><PixelBackgroundElements /></div>
+
+      <PageCornerLogos zIndex="z-30" />
+
+      <div className={`relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pb-4 sm:pb-8 ${pageCornerLogoContentPadding}`}>
+        <div className="mt-2 sm:mt-1 md:mt-2 lg:mt-3 min-w-0">
+          <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
+            <QuizFilterBar
+              searchInput={searchInput}
+              onSearchInputChange={setSearchInput}
+              onSearch={handleSearch}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              categoryFilter={categoryFilter}
+              onCategoryChange={setCategoryFilter}
+              languageFilter={languageFilter}
+              onLanguageChange={setLanguageFilter}
+              availableLanguages={availableLanguages}
+              getCategoryIcon={getCategoryIcon}
+            />
+
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                {[...Array(itemsPerPage)].map((_, i) => (
+                  <QuizCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : currentQuizzes.length === 0 ? (
+              <EmptyState onResetFilters={resetFilters} />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                  {currentQuizzes.map((quiz) => (
+                    <QuizCard
+                      key={quiz.id}
+                      quiz={quiz}
+                      isFavorite={favoriteQuizIds.includes(quiz.id)}
+                      onToggleFavorite={toggleFavorite}
+                      onQuizClick={handleQuizClick}
+                      getCategoryColor={getCategoryColor}
+                      getQuizBackgroundImage={getQuizBackgroundImage}
+                    />
+                  ))}
+                </div>
+
+                <QuizPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <QuizDetailDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        quiz={selectedQuiz}
+        onStart={handleStartQuiz}
+        onTryOut={handleTryOutQuiz}
+        getCategoryColor={getCategoryColor}
+        favoriteCount={selectedQuiz ? totalFavorites[selectedQuiz.id] || 0 : 0}
+        isLoading={dialogLoading}
+      />
+    </div>
+  )
+}
+```

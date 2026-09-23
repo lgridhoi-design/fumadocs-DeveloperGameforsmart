@@ -1,0 +1,33 @@
+---
+title: "GameStartingScreen"
+description: "Layar saat game akan segera dimulai."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/waiting/components/game-starting-screen.tsx
+
+```tsx
+import { GameBackground } from "@/components/layout/game-background"
+
+export function GameStartingScreen() {
+  return (
+    <GameBackground>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="relative text-center w-full max-w-sm">
+          <div className="relative inline-block mb-4 sm:mb-6 w-full">
+            <div className="absolute inset-0 bg-linear-to-br from-green-600 to-green-700 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+            <div className="relative bg-linear-to-br from-green-500 to-green-600 rounded-lg border-2 sm:border-4 border-black shadow-2xl p-4 sm:p-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white border-2 border-black rounded flex items-center justify-center mb-3 sm:mb-4">
+                <span className="text-xl sm:text-2xl animate-pulse">🎮</span>
+              </div>
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2 pixel-font">MEMULAI KUIS...</h3>
+              <p className="text-white/80 pixel-font-sm text-xs sm:text-sm">Mengarahkan ke permainan...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </GameBackground>
+  )
+}
+```

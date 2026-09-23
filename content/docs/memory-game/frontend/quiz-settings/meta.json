@@ -1,0 +1,11 @@
+{
+  "title": "Quiz Settings",
+  "pages": [
+    "index",
+    "settings-card",
+    "time-limit-select",
+    "question-count-select",
+    "game-mode-buttons",
+    "loading-card"
+  ]
+}

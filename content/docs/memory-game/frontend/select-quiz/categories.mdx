@@ -1,0 +1,126 @@
+---
+title: "Categories"
+description: "Filter kategori quiz berbentuk chips."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/select-quiz/components/categories.tsx
+
+```tsx
+import { Book, BookOpen, Beaker, Calculator, Clock, Globe, Languages, Laptop, Dumbbell, Film, Briefcase } from "lucide-react"
+
+export interface Category {
+  value: string
+  label: string
+  icon: React.ReactNode
+  bgImage: string
+}
+
+export const categories: Category[] = [
+  {
+    value: "all",
+    label: "SEMUA KATEGORI",
+    icon: <Book className="h-4 w-4 text-blue-500" />,
+    bgImage: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80",
+  },
+  {
+    value: "general",
+    label: "UMUM",
+    icon: <BookOpen className="h-4 w-4" />,
+    bgImage: "https://images.unsplash.com/photo-1707926310424-f7b837508c40?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "science",
+    label: "SAINS",
+    icon: <Beaker className="h-4 w-4 text-green-500" />,
+    bgImage: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "math",
+    label: "MATEMATIKA",
+    icon: <Calculator className="h-4 w-4 text-red-500" />,
+    bgImage: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "history",
+    label: "SEJARAH",
+    icon: <Clock className="h-4 w-4 text-yellow-500" />,
+    bgImage: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80",
+  },
+  {
+    value: "geography",
+    label: "GEOGRAFI",
+    icon: <Globe className="h-4 w-4 text-teal-500" />,
+    bgImage: "https://images.unsplash.com/photo-1592252032050-34897f779223?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "language",
+    label: "BAHASA",
+    icon: <Languages className="h-4 w-4 text-purple-500" />,
+    bgImage: "https://images.unsplash.com/photo-1620969427101-7a2bb6d83273?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "technology",
+    label: "TEKNOLOGI",
+    icon: <Laptop className="h-4 w-4 text-blue-500" />,
+    bgImage: "https://plus.unsplash.com/premium_photo-1661963874418-df1110ee39c1?q=80&w=1086&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "sports",
+    label: "OLAHRAGA",
+    icon: <Dumbbell className="h-4 w-4 text-orange-500" />,
+    bgImage: "https://images.unsplash.com/photo-1556817411-31ae72fa3ea0?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "entertainment",
+    label: "HIBURAN",
+    icon: <Film className="h-4 w-4 text-pink-500" />,
+    bgImage: "https://images.unsplash.com/photo-1470020618177-f49a96241ae7?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    value: "business",
+    label: "BISNIS",
+    icon: <Briefcase className="h-4 w-4 text-indigo-500" />,
+    bgImage: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&h=600&fit=crop&crop=entropy&auto=format&q=80",
+  },
+];
+
+export const translateCategoryFn = (category: string | undefined) => {
+  if (!category) return 'UMUM'
+  const categoryLower = category.toLowerCase()
+  const categoryMap: { [key: string]: string } = {
+    'general': 'UMUM', 'science': 'SAINS', 'mathematics': 'MATEMATIKA', 'math': 'MATEMATIKA',
+    'history': 'SEJARAH', 'geography': 'GEOGRAFI', 'language': 'BAHASA', 'technology': 'TEKNOLOGI',
+    'sports': 'OLAHRAGA', 'entertainment': 'HIBURAN', 'business': 'BISNIS'
+  }
+  return categoryMap[categoryLower] || 'UMUM'
+}
+
+export const getLanguageDisplayName = (code: string | undefined) => {
+  if (!code || code === 'all') return "SEMUA BAHASA"
+  const lower = code.toLowerCase()
+  if (lower === 'id' || lower === 'indonesia') return "INDONESIA"
+  if (lower === 'en' || lower === 'english') return "INGGRIS"
+  if (lower === 'ar' || lower === 'arabic') return "ARAB"
+  return code.toUpperCase()
+}
+
+export const getCategoryColor = (category: string | undefined): string => {
+  if (!category) return 'bg-blue-500';
+  const categoryLower = category.toLowerCase();
+  switch (categoryLower) {
+    case 'general': return 'bg-blue-500';
+    case 'science': return 'bg-green-500';
+    case 'mathematics': case 'math': return 'bg-red-500';
+    case 'history': return 'bg-yellow-500';
+    case 'geography': return 'bg-teal-500';
+    case 'language': return 'bg-purple-500';
+    case 'technology': return 'bg-blue-500';
+    case 'sports': return 'bg-orange-500';
+    case 'entertainment': return 'bg-pink-500';
+    case 'business': return 'bg-indigo-500';
+    default: return 'bg-gray-500';
+  }
+}
+```

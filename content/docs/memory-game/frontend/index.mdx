@@ -1,0 +1,104 @@
+---
+title: Frontend
+description: Pengantar lapisan tampilan — peta rute per halaman, pola umum, dan panduan menyalin kode lengkap.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Frontend
+
+Bab ini membahas lapisan **tampilan** (frontend) aplikasi Memory Game. Seluruh kode `app/` asli disertakan **lengkap dan verbatim** di sub-halaman per rute — Anda bisa menyalinnya langsung ke proyek Anda. Kode sumber asli berada di `gfs/Memory-Game/app/`.
+
+> Lapisan lain dibahas di bab masing-masing: [Setup](/docs/memory-game/setup) (proyek & styling), [Database](/docs/memory-game/database) (tabel & RLS), [Backend](/docs/memory-game/backend) (API route), [Login](/docs/memory-game/login) (auth Google/email), [Deploy](/docs/memory-game/deploy).
+
+---
+
+## Peta Rute
+
+Aplikasi memakai **Next.js App Router**. Setiap folder di `app/` merepresentasikan satu halaman atau satu area:
+
+| Route | Sub-halaman bab ini |
+| --- | --- |
+| `/` | [Home](/docs/memory-game/frontend/home) |
+| `/select-quiz` | [Select Quiz](/docs/memory-game/frontend/select-quiz) |
+| `/quiz-settings` | [Quiz Settings](/docs/memory-game/frontend/quiz-settings) |
+| `/host/[roomCode]` | [Host](/docs/memory-game/frontend/host) — [Lobby](/docs/memory-game/frontend/host/lobby) · [Monitor](/docs/memory-game/frontend/host/monitor) · [Leaderboard](/docs/memory-game/frontend/host/leaderboard) |
+| `/join` | [Join](/docs/memory-game/frontend/join) |
+| `/player/[roomCode]/*` | [Player](/docs/memory-game/frontend/player) — [Waiting](/docs/memory-game/frontend/player/waiting) · [Countdown](/docs/memory-game/frontend/player/countdown) · [Quiz](/docs/memory-game/frontend/player/quiz) · [Memory Challenge](/docs/memory-game/frontend/player/memory-challenge) · [Result](/docs/memory-game/frontend/player/result) |
+
+Halaman `/login` dan `/auth/callback` dibahas khusus di bab [Login](/docs/memory-game/login) karena menyangkut mekanisme autentikasi Supabase. Halaman `/test` adalah halaman *testing* bot (tidak dipakai user normal).
+
+---
+
+## Panduan Menyalin Kode
+
+Setiap sub-halaman bab ini berisi **kode lengkap** file `page.tsx` dan semua komponen di folder `components/` milik halaman tersebut, dengan ketentuan:
+
+1. **Heading `#### <jalur file>`** di atas setiap blok kode menunjukkan lokasi file di proyek sumber — buat folder/jalur yang sama di proyek Anda, lalu paste isi blok ke file tersebut.
+2. Blok dikelompokkan sebagai ```` ```tsx ```` untuk `.tsx` dan ```` ```ts ```` untuk `.ts`. Salin apa adanya — tidak ada baris yang diringkas.
+3. File pendukung yang dipakai bersama antar halaman (di `lib/`, `hooks/`, dan `components/` root) tidak diulang per halaman; daftarnya di bagian **Pola Umum Halaman** di bawah.
+4. Halaman yang hanya me-*re-export* (mis. `app/host/[roomCode]/page.tsx` = `export { default } from "./lobby/page"`) tetap disertakan karena diperlukan agar routing Next.js berfungsi.
+
+<Callout title="Penting">
+Petunjuk frontmatter, styling, dan dependensi (Tailwind, Supabase, i18n) dibangun di bab [Setup](/docs/memory-game/setup) dan [Database](/docs/memory-game/database). Kode di bab ini mengasumsikan semua itu sudah tersedia.
+</Callout>
+
+---
+
+## Pola Umum Halaman
+
+Semua halaman yang interaktif adalah **Client Component** (`"use client"` di baris pertama), karena bergantung pada state React, `useEffect`, dan librari klien (Supabase, i18n, timer).
+
+**Struktur folder per halaman** mengikuti pola *separation of concerns*: `page.tsx` berisi orchestration (state, efek, logika routing), sedangkan potongan UI besar dipecah ke folder `components/` milik halaman itu sendiri. Di bab ini, setiap area besar dibagi menjadi **sub-folder** agar satu page MDX tidak terlalu besar — halaman pertama (`index`) menampilkan `page.tsx`, lalu satu halaman untuk setiap komponen. Contoh:
+
+```bash
+frontend/player/result/            # → sub-folder bab ini
+├── meta.json                      # urutan sub-halaman
+├── index.mdx                      # page.tsx (orchestration + state)
+├── types.mdx                      # components/types.ts
+├── use-result-data.mdx            # components/use-result-data.ts
+├── player-result-logic.mdx        # components/player-result-logic.ts
+├── player-result-card.mdx         # components/player-result-card.tsx
+├── result-stats-grid.mdx          # components/result-stats-grid.tsx
+├── result-screens.mdx             # components/result-screens.tsx
+├── result-background.mdx          # components/result-background.tsx
+└── floating-action-buttons.mdx    # components/floating-action-buttons.tsx
+```
+
+**Logic yang dipakai lintas halaman** ditaruh di `lib/` dan `hooks/` (tidak disertakan per halaman karena dipakai bersama):
+
+- `hooks/use-room.ts` — subscribe realtime status room (`room`, `loading`, `participants`).
+- `hooks/use-synchronized-timer.ts` — timer yang sinkron memakai *server time*.
+- `hooks/use-quiz.ts` — fetch daftar quiz dengan cache *stale-while-revalidate*.
+- `lib/room-manager.ts` — helper join/keluar room, update status, mark player finished.
+- `lib/supabase-session-manager.ts` — baca/tulis data sesi (player/host) di storage.
+- `lib/quiz-memory-flow.ts` — logika kapan mini game memory muncul.
+- `lib/player-quiz-progress.ts` — hitung progres soal & urutkan leaderboard.
+
+Komponen yang dipakai banyak halaman ditaruh di root `components/` (mis. `guards/fullscreen-guard.tsx`, `layout/page-title.tsx`, `game/memory-game.tsx`, `game/countdown-timer.tsx`).
+
+---
+
+## i18n & RTL
+
+Aplikasi mendukung beberapa bahasa (`ar`, `id`, `en`, dst.) dengan `i18next`. Terjemahan disimpan di `locale/` (satu file per bahasa: menu, hero, lobby, dll.), dan `react-i18next` + `i18next-browser-languagedetector` memilih bahasa dari browser.
+
+Provider global dipasang sekali di `app/layout.tsx`:
+
+- `components/providers/i18n-initializer` — inisialisasi i18next & load terjemahan.
+- `components/providers/rtl-provider` — saat bahasa Arab (RTL) aktif, mengatur `dir="rtl"` di `<html>`/kontainer.
+
+Penggunaan di komponen cukup `useTranslation()` seperti `i18next` biasa. Icon yang arahnya tergantung bahasa (panah, dsb.) memakai hook `use-directional-icon` — ikon dibalik kiri/kanan saat RTL aktif.
+
+## Alur Satu Game (kerja sama antar halaman)
+
+Agar konteks halaman-halaman berikut jelas, ingat alur satu sesi:
+
+1. Host duduk di `/quiz-settings`, membuat room → dapat `roomCode`.
+2. Host share kode di lobi → player join lewat `/join`.
+3. Host menekan **Start** di lobby → semua perangkat start.
+4. Player melewati `waiting` → `game/countdown` → `quiz` (belajar) berseling `game/memory-challenge` → `result`.
+5. Host memantau di `monitor`, lalu melihat peringkat di `leaderboard`.
+6. Saat room `finished`, semua kembali ke `/` dengan notifikasi `host-ended`.
+
+Satu room diwakili objek `Room` dari `lib/room-manager.ts`, berisi `code`, `host_id`, `status` (`waiting`/`countdown`/`started`/`finished`), `settings` (jumlah soal, waktu, gameMode), dan `started_at`. State ini dikirim lewat Supabase Realtime sehingga semua perangkat selalu melihat status yang sama.

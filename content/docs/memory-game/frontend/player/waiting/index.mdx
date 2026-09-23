@@ -1,0 +1,304 @@
+---
+title: "Player: Waiting Room"
+description: "Kode lengkap halaman Waiting Room untuk pemain pada aplikasi Memory Game."
+---
+
+#### app/player/[roomCode]/waiting/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { useRoom } from "@/hooks/use-room"
+import { roomManager } from "@/lib/room-manager"
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { CountdownTimer } from "@/components/game/countdown-timer"
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import { PageTitle } from '@/components/layout/page-title'
+import { initQuizProgressForSession } from '@/lib/quiz-memory-flow'
+import { FullscreenPrompt } from "@/components/guards/fullscreen-prompt"
+import { useFullscreenManager } from "@/hooks/use-fullscreen"
+import { GameBackground } from "@/components/layout/game-background"
+import { GameStartingScreen } from "./components/game-starting-screen"
+import { WaitingCard } from "./components/waiting-card"
+import type { WaitingPlayerInfo, WaitingRoomPlayer } from "./components/types"
+
+export default function WaitingRoomPage() {
+  const params = useParams()
+  const router = useRouter()
+  const roomCode = (params.roomCode as string)?.toUpperCase()
+  const { room, loading } = useRoom(roomCode)
+  const { isMobile, requestFullscreen } = useFullscreenManager()
+  const [gameStarting, setGameStarting] = useState(false)
+  const [forceCountdown, setForceCountdown] = useState(false)
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false)
+  const [broadcastRoomData, setBroadcastRoomData] = useState<any>(null)
+
+  const proceedToGame = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`quiz-progress-${roomCode}`)
+        localStorage.removeItem(`memory-cards-state-${roomCode}`)
+        localStorage.removeItem(`memory-return-${roomCode}`)
+        localStorage.removeItem(`memory-progress-${roomCode}`)
+        localStorage.removeItem(`quiz-last-result-${roomCode}`)
+      } catch { }
+    }
+
+    const sessionKey = room?.startedAt ? `${roomCode}:${room.startedAt}` : undefined
+    initQuizProgressForSession(roomCode, sessionKey)
+
+    if (sessionKey && typeof window !== 'undefined') {
+      try { localStorage.setItem(`quiz-session-key-${roomCode}`, sessionKey) } catch { }
+    }
+
+    setGameStarting(true)
+    router.push(`/player/${roomCode}/game/memory-challenge`)
+  }
+
+  const handleCountdownComplete = () => {
+    if (isMobile && !document.fullscreenElement) {
+      setShowFullscreenPrompt(true)
+      return
+    }
+    proceedToGame()
+  }
+
+  const handleFullscreenTap = async () => {
+    await requestFullscreen()
+    proceedToGame()
+  }
+
+  const [playerInfo, setPlayerInfo] = useState<WaitingPlayerInfo | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const stored = localStorage.getItem('currentPlayer')
+      if (stored) {
+        const player = JSON.parse(stored)
+        if (player.id && player.nickname && (!roomCode || !player.roomCode || player.roomCode.toUpperCase() === roomCode.toUpperCase())) {
+          return { nickname: player.nickname, avatar: player.avatar || '', playerId: player.id }
+        }
+      }
+    } catch { }
+    return null
+  })
+  const playerInfoRef = useRef(playerInfo || null)
+
+  const [showExitDialog, setShowExitDialog] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const isLeavingRef = useRef(false)
+  const isKickedRef = useRef(false)
+  const hasHadRoomRef = useRef(false)
+
+  const handleKickRedirect = () => {
+    if (isKickedRef.current) return
+    isKickedRef.current = true
+    sessionManager.clearSession().catch(console.error)
+    if (typeof window !== 'undefined') localStorage.removeItem('currentPlayer')
+    window.location.href = '/?kicked=1'
+  }
+
+  useEffect(() => {
+    const restorePlayerInfo = async () => {
+      if (isLeavingRef.current) return
+
+      if (typeof window !== 'undefined') {
+        try {
+          const storedPlayer = localStorage.getItem("currentPlayer")
+          if (storedPlayer) {
+            const player = JSON.parse(storedPlayer)
+            if (player.roomCode === roomCode && player.id && player.nickname) {
+              const playerData = { nickname: player.nickname, avatar: player.avatar, playerId: player.id }
+              setPlayerInfo(playerData)
+              playerInfoRef.current = playerData
+              return
+            }
+          }
+        } catch (e: any) {
+          console.warn("[WaitingRoom] local parse error:", e.message)
+        }
+      }
+
+      try {
+        const sessionId = sessionManager.getSessionIdFromStorage()
+        if (sessionId) {
+          const sessionData = await sessionManager.getSessionData(sessionId)
+          if (sessionData && sessionData.user_type === 'player' && sessionData.room_code === roomCode) {
+            const playerData = {
+              nickname: sessionData.user_data.nickname,
+              avatar: sessionData.user_data.avatar,
+              playerId: sessionData.user_data.id,
+            }
+            setPlayerInfo(playerData)
+            playerInfoRef.current = playerData
+            return
+          }
+        }
+      } catch (err: any) {
+        console.warn("[WaitingRoom] Session DB restore failed:", err)
+      }
+
+      if (!isLeavingRef.current) router.push(`/join?room=${roomCode}`)
+    }
+
+    restorePlayerInfo()
+  }, [roomCode, router])
+
+  useEffect(() => {
+    if (room?.status === "countdown" || (room?.countdownStartTime && !room?.gameStarted)) {
+      router.prefetch(`/player/${roomCode}/game/memory-challenge`)
+      setForceCountdown(true)
+    } else if (room?.status === "quiz" && !gameStarting && !showFullscreenPrompt) {
+      proceedToGame()
+    } else if (room?.status === "finished") {
+      router.push(`/player/${roomCode}/result`)
+    }
+  }, [room?.status, room?.countdownStartTime, room?.gameStarted, gameStarting, roomCode, router])
+
+  useEffect(() => {
+    if (!roomCode) return
+
+    const broadcastChannel = new BroadcastChannel(`countdown-${roomCode}`)
+    const hostLeftChannel = new BroadcastChannel(`host-left-${roomCode}`)
+
+    broadcastChannel.onmessage = (event) => {
+      if (event.data.type === 'countdown-started') {
+        setBroadcastRoomData({
+          ...event.data.room,
+          countdownStartTime: event.data.countdownStartTime,
+          countdownDuration: event.data.countdownDuration
+        })
+        setForceCountdown(true)
+      }
+    }
+
+    hostLeftChannel.onmessage = (event) => {
+      if (event.data.type === 'host-left' && event.data.roomCode === roomCode) {
+        sessionManager.clearSession().catch(console.error)
+        if (typeof window !== 'undefined') localStorage.removeItem('currentPlayer')
+        window.location.href = '/?host-ended=1'
+      }
+    }
+
+    return () => {
+      broadcastChannel.close()
+      hostLeftChannel.close()
+    }
+  }, [roomCode])
+
+  useEffect(() => {
+    if (!roomCode || !playerInfo) return
+    const kickChannel = new BroadcastChannel(`kick-${roomCode}`)
+    kickChannel.onmessage = (event) => {
+      const activePlayerId = playerInfoRef.current?.playerId
+      if (activePlayerId && event.data.type === 'player-kicked' && event.data.playerId === activePlayerId) {
+        handleKickRedirect()
+      }
+    }
+    return () => { kickChannel.close() }
+  }, [roomCode, playerInfo])
+
+  const joinTimeRef = useRef<number>(Date.now())
+
+  useEffect(() => {
+    if (!playerInfo || !room || !roomCode) return
+    if (room === null || room === undefined) return
+
+    if (room.status === 'countdown') setForceCountdown(true)
+
+    const isStillInRoom = room.players?.some(p => p.id === playerInfo.playerId)
+    const isLobbyMode = room.status === 'waiting'
+    const gracePeriodElapsed = Date.now() - joinTimeRef.current > 5000
+    const playerWasRemoved = !isStillInRoom
+
+    if (playerWasRemoved && isLobbyMode && gracePeriodElapsed) {
+      handleKickRedirect()
+    }
+  }, [room, playerInfo, roomCode])
+
+  useEffect(() => {
+    if (room && !hasHadRoomRef.current) hasHadRoomRef.current = true
+  }, [room])
+
+  useEffect(() => {
+    if (hasHadRoomRef.current && !room && !loading && !isLeavingRef.current && !isKickedRef.current) {
+      sessionManager.clearSession().catch(console.error)
+      if (typeof window !== 'undefined') localStorage.removeItem('currentPlayer')
+      window.location.href = '/?host-ended=1'
+    }
+  }, [room, loading])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    window.history.pushState({ waitingRoom: true, roomCode }, '', window.location.href)
+
+    const handlePopState = () => {
+      setShowExitDialog(true)
+      window.history.pushState({ waitingRoom: true, roomCode }, '', window.location.href)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [roomCode])
+
+  const handleLeaveRoom = async () => {
+    if (isLeaving) return
+    setIsLeaving(true)
+    isLeavingRef.current = true
+    if (playerInfo) {
+      try { await roomManager.leaveRoom(roomCode, playerInfo.playerId, playerInfo.nickname) } catch (error) { console.error("[WaitingRoom] Error leaving room:", error) }
+    }
+    try { await sessionManager.clearSession() } catch (error) { console.error("[WaitingRoom] Error clearing session:", error) }
+    if (typeof window !== 'undefined') localStorage.removeItem("currentPlayer")
+    router.push("/")
+  }
+
+  if (showFullscreenPrompt) return <FullscreenPrompt onFullscreen={handleFullscreenTap} />
+
+  if ((room && room.status === "countdown") || forceCountdown) {
+    const countdownRoom = broadcastRoomData || room
+    return (
+      <CountdownTimer
+        room={countdownRoom || {
+          code: roomCode,
+          status: "countdown" as const,
+          countdownStartTime: (countdownRoom as any)?.countdownStartTime || new Date().toISOString(),
+          countdownDuration: (countdownRoom as any)?.countdownDuration || 10
+        }}
+        onCountdownComplete={handleCountdownComplete}
+      />
+    )
+  }
+
+  if (gameStarting) {
+    return <GameStartingScreen />
+  }
+
+  return (
+    <>
+      <PageTitle title={`Waiting Room`} />
+      <GameBackground>
+        <PageCornerLogos memoryQuizNoLink={true} />
+
+        <div className={`relative z-10 container mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 ${pageCornerLogoContentPadding}`}>
+          <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
+            <WaitingCard
+              roomCode={roomCode}
+              playerCount={room?.players?.length || 0}
+              players={(room?.players ?? []) as unknown as WaitingRoomPlayer[]}
+              playerInfo={playerInfo}
+              gameStarted={!!room?.gameStarted}
+              showExitDialog={showExitDialog}
+              isLeaving={isLeaving}
+              onOpenChange={(open) => { if (!isLeaving) setShowExitDialog(open) }}
+              onLeave={handleLeaveRoom}
+            />
+          </div>
+        </div>
+      </GameBackground>
+    </>
+  )
+}
+```

@@ -1,0 +1,20 @@
+---
+title: Player
+description: Area pemain — rangkaian halaman mulai dari waiting room, countdown, quiz, mini game memory, hingga halaman hasil.
+---
+
+# Player
+
+Area pemain mencakup seluruh halaman yang dilihat pemain setelah bergabung ke suatu room. Tidak ada satu `page.tsx` tunggal untuk area ini — setiap alur adalah folder tersendiri di `app/player/[roomCode]/`.
+
+Sub-halaman berikut berisi **kode lengkap** (verbatim) setiap file sumber, tanpa ringkasan:
+
+| Alur | Sub-halaman |
+| --- | --- |
+| Waiting room | [Waiting Room](/docs/memory-game/frontend/player/waiting) |
+| Hitung mundur sebelum main | [Countdown](/docs/memory-game/frontend/player/countdown) |
+| Menjawab kuis | [Quiz](/docs/memory-game/frontend/player/quiz) |
+| Mini game memory berselang-seling | [Memory Challenge](/docs/memory-game/frontend/player/memory-challenge) |
+| Hasil akhir pemain | [Player Result](/docs/memory-game/frontend/player/result) |
+
+Setiap sub-halaman menampilkan `page.tsx` di halaman utamanya (`index`) dan satu halaman per komponen pendukung di folder `components/` miliknya.

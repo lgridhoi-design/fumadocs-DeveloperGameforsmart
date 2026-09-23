@@ -1,0 +1,131 @@
+---
+title: "DesktopLeaderboard"
+description: "Tabel peringkat versi desktop."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/leaderboard/components/desktop-leaderboard.tsx
+
+```tsx
+import { Star, Sparkles, Zap, Award, Clock } from "lucide-react"
+import { RobustGoogleAvatar } from "@/components/player/robust-google-avatar"
+import { PlayerName } from '@/components/player/player-name'
+import { formatTime, type LeaderboardPlayer } from "./types"
+
+interface DesktopLeaderboardProps {
+  players: LeaderboardPlayer[]
+  champion?: LeaderboardPlayer
+  getScoreStatusColor: (player: LeaderboardPlayer) => 'low' | 'high'
+}
+
+export function DesktopLeaderboard({ players, champion, getScoreStatusColor }: DesktopLeaderboardProps) {
+  return (
+    <div className="max-w-7xl mx-auto mb-16 hidden md:block">
+      <div className="relative mb-12">
+        <div className="flex justify-center items-center gap-3 md:gap-4 lg:gap-6 xl:gap-12 relative">
+          <DesktopPodiumCard rank={2} player={players[1]} />
+          {champion && <ChampionCard champion={champion} />}
+          <DesktopPodiumCard rank={3} player={players[2]} />
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border-4 border-indigo-400/40 rounded-3xl p-6 backdrop-blur-sm relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-3xl blur-xl"></div>
+        <div className="relative z-10">
+          <div className="grid grid-cols-[100px_1.5fr_100px_100px] gap-3 px-4 py-3 mb-2 border-b-2 border-indigo-400/30">
+            <div className="text-yellow-400 font-bold text-sm pixel-font whitespace-nowrap">RANK</div>
+            <div className="text-yellow-400 font-bold text-sm pixel-font whitespace-nowrap">PLAYER</div>
+            <div className="text-yellow-400 font-bold text-sm pixel-font text-center whitespace-nowrap">SCORE</div>
+            <div className="text-yellow-400 font-bold text-sm pixel-font text-center whitespace-nowrap">TIME</div>
+          </div>
+
+          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+            {players.map((player, index) => {
+              const rank = index + 1
+              const isLowScore = getScoreStatusColor(player) === 'low'
+              return (
+                <div key={player.id} className="group relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-lg blur-md group-hover:blur-lg transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+                  <div className="relative bg-gradient-to-r from-slate-800/60 to-slate-900/60 rounded-lg p-3 border border-slate-600/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01] hover:border-indigo-400/60">
+                    <div className="grid grid-cols-[100px_1.5fr_100px_100px] items-center gap-3 px-2">
+                      <div className={`font-bold text-base ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-slate-300' : rank === 3 ? 'text-amber-400' : 'text-white'} whitespace-nowrap`}>#{rank}</div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative min-w-0 flex-1">
+                          <PlayerName name={player.nickname} className="font-bold text-sm text-white truncate w-full block" uppercase={false} />
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <span className={`font-bold text-base ${isLowScore ? 'text-red-500' : 'text-green-500'}`}>
+                          {Math.min(player.quizScore || 0, 100)}
+                        </span>
+                      </div>
+                      <div className="text-center flex items-center justify-center gap-1 whitespace-nowrap"><Clock className={`w-3.5 h-3.5 ${isLowScore ? 'text-red-500' : 'text-green-500'}`} /><span className={`${isLowScore ? 'text-red-500' : 'text-green-500'} font-bold text-sm`}>{formatTime(player.timeSpent || 0)}</span></div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DesktopPodiumCard({ rank, player }: { rank: number; player?: LeaderboardPlayer }) {
+  if (!player) return null
+  const isSilver = rank === 2
+  const cardBorder = isSilver
+    ? 'from-slate-500/40 to-slate-700/40 border-slate-400/70'
+    : 'from-amber-600/40 to-orange-700/40 border-amber-500/70'
+  const avatarBorder = isSilver ? 'border-slate-400' : 'border-amber-500'
+  const avatarBg = isSilver ? 'from-slate-500 to-slate-600' : 'from-amber-500 to-orange-600'
+  const scoreBg = isSilver ? 'from-slate-400 to-slate-600' : 'from-amber-500 to-orange-600'
+  const rankBadgeBg = isSilver ? 'from-slate-300 to-slate-500' : 'from-amber-500 to-orange-600'
+  return (
+    <div className="flex flex-col items-center relative group self-end mb-8">
+      <div className="relative transform group-hover:scale-105 transition-all duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-400/30 to-slate-600/30 blur-xl group-hover:blur-2xl"></div>
+        <div className={`relative bg-gradient-to-br ${cardBorder} rounded-3xl p-3 md:p-4 lg:p-5 xl:p-8 backdrop-blur-sm shadow-2xl min-w-[180px] max-w-[180px] w-[180px] md:min-w-[200px] md:max-w-[200px] md:w-[200px] lg:min-w-[220px] lg:max-w-[220px] lg:w-[220px] xl:min-w-[280px] xl:max-w-[280px] xl:w-[280px]`}>
+          <div className={`absolute top-3 right-3 w-8 h-8 md:top-3.5 md:right-3.5 md:w-9 md:h-9 xl:top-4 xl:right-4 xl:w-10 xl:h-10 bg-gradient-to-br ${rankBadgeBg} rounded-full border-2 border-white shadow-lg flex items-center justify-center`}><span className="text-sm md:text-base xl:text-lg font-bold text-white">{rank}</span></div>
+          <div className={`w-16 h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full border-4 ${avatarBorder} overflow-hidden mx-auto mb-4 lg:mb-5 xl:mb-6 shadow-2xl`}>
+            {/^https?:\/\//.test(player.avatar) ? (<RobustGoogleAvatar avatarUrl={player.avatar} alt={player.nickname} width={96} height={96} className="w-full h-full object-cover" />) : (<div className={`w-full h-full bg-gradient-to-br ${avatarBg} flex items-center justify-center`}><span className="text-xl lg:text-2xl xl:text-3xl font-bold text-white">{player.nickname.charAt(0).toUpperCase()}</span></div>)}
+          </div>
+          <div className="relative text-center w-full">
+            <PlayerName name={player.nickname} className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-white mb-3 lg:mb-4 xl:mb-6 block leading-tight drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mx-auto truncate w-full" uppercase={false} />
+          </div>
+          <div className={`bg-gradient-to-r ${scoreBg} rounded-2xl px-2 py-2 md:px-4 md:py-3 lg:px-6 lg:py-4 xl:px-8 xl:py-6 shadow-2xl`}><div className="text-xl md:text-2xl lg:text-3xl xl:text-5xl font-bold text-white text-center">{player.quizScore || 0}</div></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ChampionCard({ champion }: { champion: LeaderboardPlayer }) {
+  return (
+    <div className="flex flex-col items-center relative z-20 group -mt-8">
+      <div className="relative transform group-hover:scale-[1.02] transition-all duration-300">
+        <div className="absolute -inset-4 bg-gradient-to-br from-yellow-400/30 via-amber-400/20 to-yellow-500/30 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80"></div>
+        <div className="relative bg-gradient-to-b from-yellow-300 via-yellow-200 to-yellow-400 rounded-3xl p-4 md:p-5 lg:p-6 xl:p-12 shadow-[0_25px_70px_rgba(251,191,36,0.5)] min-w-[240px] max-w-[240px] w-[240px] md:min-w-[260px] md:max-w-[260px] md:w-[260px] lg:min-w-[280px] lg:max-w-[280px] lg:w-[280px] xl:min-w-[360px] xl:max-w-[360px] xl:w-[360px] border-4 border-yellow-100/70">
+          <div className="absolute top-4 left-4 lg:top-6 lg:left-6 opacity-60"><Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-600" /></div>
+          <div className="absolute top-4 right-4 lg:top-6 lg:right-6 flex items-start justify-center gap-0"><Star className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-600 -mt-1.5 -mr-1 z-10" fill="currentColor" /><div className="w-10 h-10 md:w-12 md:h-12 xl:w-14 xl:h-14 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full border-3 border-white shadow-lg flex items-center justify-center relative"><span className="text-lg md:text-xl xl:text-2xl font-bold text-white">1</span></div></div>
+          <div className="relative w-24 h-24 md:w-28 md:h-28 lg:w-30 lg:h-30 xl:w-36 xl:h-36 mx-auto mb-4 lg:mb-5 xl:mb-6">
+            <div className="w-full h-full rounded-full bg-white p-1.5 md:p-2 shadow-2xl border-4 border-yellow-100">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                {/^https?:\/\//.test(champion.avatar) ? (<RobustGoogleAvatar avatarUrl={champion.avatar} alt={champion.nickname} width={128} height={128} className="w-full h-full object-cover" />) : (<div className="w-full h-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center"><span className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-white">{champion.nickname.charAt(0).toUpperCase()}</span></div>)}
+              </div>
+            </div>
+          </div>
+          <div className="relative text-center w-full">
+            <PlayerName name={champion.nickname} className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-1 block leading-tight drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] mx-auto truncate w-full" uppercase={false} />
+          </div>
+          <div className="mt-4 lg:mt-6 xl:mt-8 bg-gradient-to-br from-amber-600 to-yellow-700 rounded-2xl px-3 py-2 md:px-6 md:py-4 lg:px-8 lg:py-5 xl:px-10 xl:py-7 shadow-lg border-2 border-amber-700/40"><div className="text-xl md:text-2xl lg:text-3xl xl:text-5xl font-bold text-white text-center leading-none">{Math.min(champion.quizScore || 0, 100)}</div></div>
+          <div className="absolute bottom-4 left-4 lg:bottom-6 lg:left-6 opacity-50"><Zap className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-700" /></div>
+          <div className="absolute bottom-4 right-4 lg:bottom-6 lg:right-6 opacity-50"><Award className="w-4 h-4 lg:w-5 lg:h-5 text-amber-700" /></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```

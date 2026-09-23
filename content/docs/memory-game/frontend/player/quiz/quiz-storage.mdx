@@ -1,0 +1,42 @@
+---
+title: "QuizStorage"
+description: "Penyimpanan progres kuis di localStorage."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/quiz/components/quiz-storage.ts
+
+```ts
+import { getServerNow } from "@/lib/server-time"
+
+export function readCurrentPlayer(): { nickname?: string; avatar?: string; joinedAt?: any } | null {
+  if (typeof window === "undefined") return null
+  const raw = localStorage.getItem("currentPlayer")
+  return raw ? JSON.parse(raw) : null
+}
+
+export function saveQuizLastResult(
+  roomCode: string,
+  playerId: string | null,
+  questionsAnswered: number,
+  timeSpent: number
+): void {
+  if (typeof window === "undefined") return
+  const cp = readCurrentPlayer()
+  localStorage.setItem(
+    `quiz-last-result-${roomCode}`,
+    JSON.stringify({
+      at: getServerNow(),
+      id: playerId,
+      nickname: cp?.nickname || "",
+      avatar: cp?.avatar || "",
+      quizScore: 0,
+      questionsAnswered,
+      correctAnswers: 0,
+      timeSpent,
+      joinedAt: cp?.joinedAt || null,
+    })
+  )
+}
+```

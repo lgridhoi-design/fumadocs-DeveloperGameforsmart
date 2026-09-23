@@ -1,0 +1,28 @@
+---
+title: "SettingsLoadingCard"
+description: "Loading saat membuat room."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/quiz-settings/components/loading-card.tsx
+
+```tsx
+import { Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+export function SettingsLoadingCard() {
+  return (
+    <div className="relative inline-block mb-6">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+      <div className="relative bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg border-4 border-black shadow-2xl p-6">
+        <div className="w-16 h-16 mx-auto bg-white border-2 border-black rounded flex items-center justify-center mb-4">
+          <Settings className="h-8 w-8 text-black animate-spin" />
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2 pixel-font">MEMUAT...</h3>
+        <p className="text-white/80 pixel-font-sm">MENYIAPKAN PENGATURAN KUIS</p>
+      </div>
+    </div>
+  )
+}
+```

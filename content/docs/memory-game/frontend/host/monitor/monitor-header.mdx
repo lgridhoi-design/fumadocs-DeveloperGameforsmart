@@ -1,0 +1,84 @@
+---
+title: "MonitorHeader"
+description: "Header status dan timer monitor."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/[roomCode]/monitor/components/monitor-header.tsx
+
+```tsx
+import { Users } from "lucide-react"
+import { getTimerDisplayText } from "@/lib/timer-utils"
+import { EndGameDialog } from "./end-game-dialog"
+
+interface MonitorHeaderProps {
+  playerCount: number
+  timerState: any
+  showTimeWarning: boolean
+  shouldCompactEndGameLabel: boolean
+  isEndingGame: boolean
+  onEnd: () => void
+}
+
+export function MonitorHeader({
+  playerCount,
+  timerState,
+  showTimeWarning,
+  shouldCompactEndGameLabel,
+  isEndingGame,
+  onEnd,
+}: MonitorHeaderProps) {
+  const showTimer = timerState.remainingTime !== Number.MAX_SAFE_INTEGER
+  const hasTimer = showTimer
+
+  return (
+    <>
+      <div className="sm:hidden mb-4" dir="ltr">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+          <div className="flex h-10 min-w-0 items-center gap-2 rounded-xl border border-blue-500/50 bg-blue-500/20 px-3 shadow-[0_8px_18px_rgba(59,130,246,0.12)]">
+            <Users className="h-4 w-4 text-blue-400 shrink-0" />
+            <span className="text-blue-400 text-sm font-black pixel-font">{playerCount}</span>
+          </div>
+
+          {hasTimer ? (
+            <div className="flex h-10 min-w-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.25)]">
+              <div className={`pixel-font text-[0.95rem] sm:text-base font-black tracking-[0.16em] tabular-nums ${showTimeWarning ? 'text-red-400' : 'text-white'} drop-shadow-[2px_2px_0px_rgba(0,0,0,0.45)]`}>
+                {getTimerDisplayText(timerState)}
+              </div>
+            </div>
+          ) : <div className="flex-1" />}
+
+          <EndGameDialog
+            compact
+            showLabel={!shouldCompactEndGameLabel}
+            isEndingGame={isEndingGame}
+            onEnd={onEnd}
+          />
+        </div>
+      </div>
+
+      <div className="hidden sm:flex items-center justify-between mb-6 sm:mb-8 gap-4">
+        <div className="h-16 flex items-center justify-center">
+          <div className="h-full flex items-center gap-2.5 bg-blue-500/20 border-2 border-blue-500/50 rounded-lg px-5">
+            <Users className="w-5 h-5 text-blue-400 shrink-0" />
+            <span className="text-blue-400 font-bold text-xl pixel-font">{playerCount}</span>
+          </div>
+        </div>
+
+        <div className="h-16 flex items-center font-mono font-black tracking-wider px-5">
+          {showTimer && (
+            <span className={`pt-2 font-black text-4xl md:text-5xl lg:text-6xl tabular-nums ${showTimeWarning ? 'text-red-400' : 'text-white'} drop-shadow-[2px_2px_0px_rgba(0,0,0,0.5)]`}>
+              {getTimerDisplayText(timerState)}
+            </span>
+          )}
+        </div>
+
+        <div className="h-16 flex items-center">
+          <EndGameDialog isEndingGame={isEndingGame} onEnd={onEnd} />
+        </div>
+      </div>
+    </>
+  )
+}
+```

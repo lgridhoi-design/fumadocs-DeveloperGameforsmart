@@ -1,0 +1,11 @@
+{
+  "title": "Leaderboard",
+  "pages": [
+    "index",
+    "types",
+    "leaderboard-screens",
+    "mobile-leaderboard",
+    "desktop-leaderboard",
+    "floating-action-buttons"
+  ]
+}

@@ -1,0 +1,161 @@
+---
+title: Login & Autentikasi
+description: "Versi minimal & fungsional login dengan Supabase Auth — email/password dan Google OAuth, tanpa middleware atau context rumit."
+---
+
+# Login & Autentikasi
+
+Bab ini berisi versi **minimal dan fungsional** login memakai **Supabase Auth** — cukup 2 cara (email/password dan Google OAuth), ~150 baris kode, UI polos tanpa komponen berat. Versi asli di proyek jauh lebih lengkap (AuthContext, middleware refresh token, sinkronisasi antar tab) — di sini sengaja disederhanakan agar langsung berfungsi.
+
+## 1. Client Supabase — `lib/supabase.ts`
+
+Client browser dipakai di halaman login dan callback. Cukup `createBrowserClient` dari `@supabase/ssr` dengan dua env yang sudah disiapkan di bab [Setup](/docs/memory-game/setup/supabase):
+
+```ts
+import { createBrowserClient } from "@supabase/ssr"
+
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+```
+
+## 2. Halaman Login — `app/login/page.tsx`
+
+Satu file client component lengkap: form email/password + tombol Google. Setelah berhasil langsung `router.push('/')`. UI sengaja polos (elemen `<input>`/`<button>` biasa).
+
+```tsx
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+
+  const loginWithPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage(null)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    if (data.session) router.push("/")
+  }
+
+  const loginWithGoogle = async () => {
+    setMessage(null)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) setMessage(error.message)
+  }
+
+  return (
+    <div style={{ maxWidth: 360, margin: "80px auto", fontFamily: "sans-serif" }}>
+      <h1>Masuk</h1>
+
+      <form onSubmit={loginWithPassword} style={{ display: "grid", gap: 10 }}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ padding: 8 }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={{ padding: 8 }}
+        />
+        {message && <p style={{ color: "red" }}>{message}</p>}
+        <button type="submit" style={{ padding: 10 }}>
+          Masuk dengan Email
+        </button>
+      </form>
+
+      <button
+        type="button"
+        onClick={loginWithGoogle}
+        style={{ padding: 10, marginTop: 10, width: "100%" }}
+      >
+        Masuk dengan Google
+      </button>
+    </div>
+  )
+}
+```
+
+## 3. Callback OAuth — `app/auth/callback/page.tsx`
+
+Setelah Google, Supabase mengarahkan kembali ke `/auth/callback`. Halaman ini membaca `origin` yang kita kirim, memastikan sesi terbentuk, lalu redirect balik.
+
+```tsx
+"use client"
+
+import { useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+
+function CallbackContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const handle = async () => {
+      const { data } = await supabase.auth.getSession()
+
+      if (data.session) {
+        // Kembali ke halaman asal bila dikirim lewat redirectTo (?redirect=...)
+        const redirect = searchParams.get("redirect")
+        router.replace(redirect || "/")
+      } else {
+        router.replace("/login")
+      }
+    }
+    handle()
+  }, [router, searchParams])
+
+  return (
+    <div style={{ fontFamily: "sans-serif", textAlign: "center", marginTop: 80 }}>
+      <p>Memproses login...</p>
+    </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense>
+      <CallbackContent />
+    </Suspense>
+  )
+}
+```
+
+> Catatan: versi asli menyimpan `pendingRedirect` di `sessionStorage` agar user yang mau join room (`/join?room=...`) tetap diarahkan ke room setelah login. Jika kamu butuh itu nanti, tambahkan param `redirect` dan `room` ke URL callback, simpan ke `sessionStorage`, lalu baca kembali setelah sesi jadi.
+
+## 4. Setup Supabase (wajib untuk Google OAuth)
+
+Tabel `profiles` sudah dibuat otomatis oleh trigger saat signup (skrip `26_create_users_profile_table.sql` sudah dijalankan di bab [Setup](/docs/memory-game/setup/supabase)). Yang tersisa di dashboard:
+
+1. **Supabase Dashboard → Authentication → Providers → Google** → Enable, lalu isi **Client ID** dan **Client Secret** dari [Google Cloud Console](https://console.developers.google.com/) (buat **OAuth 2.0 Client ID** tipe *Web application*).
+2. Tambahkan **redirect URL** di Google Cloud Console:
+   - Development: `http://localhost:3000/auth/v1/callback`
+   - `http://localhost:3000/auth/callback` (untuk callback kita sendiri)
+
+Login email/password berfungsi begitu tabel `profiles` dan `auth` tersedia tanpa konfigurasi tambahan — user cukup dibuat lewat halaman signup Supabase (mis. `https://<project>.supabase.co/auth/v1/signup` atau dashboard).

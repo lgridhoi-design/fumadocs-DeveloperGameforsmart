@@ -1,0 +1,366 @@
+---
+title: "Join (Memory Game)"
+description: "Kode lengkap halaman join Memory Game beserta komponen pendukungnya."
+---
+
+#### app/join/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, Suspense, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
+import { roomManager } from "@/lib/room-manager"
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { QRScanner } from "@/components/join/qr-scanner"
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import getDisplayName from '@/lib/display-name'
+import { isPlayersSupabaseConfigured } from "@/lib/supabase-players"
+import { getServerNow } from "@/lib/server-time"
+import { GameBackground } from "@/components/layout/game-background"
+import { JoinCard } from "./components/join-card"
+import { JoinLoadingScreen } from "./components/join-loading-screen"
+import { AccessDeniedModal } from "./components/access-denied-modal"
+
+function generatePlayerId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const prefix = '01m'
+  let result = prefix
+  for (let i = 0; i < 20 - prefix.length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return isPlayersSupabaseConfigured() ? result : Math.random().toString(36).substr(2, 9)
+}
+
+function JoinPageContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user, profile: userProfile, loading: authLoading } = useAuth()
+
+  const isAuthenticated = !!user
+
+  const displayName = userProfile
+    ? getDisplayName(userProfile)
+    : (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'player')
+
+  const roomCodeParam = searchParams.get("room")
+  const isFromUrlRef = useRef(!!roomCodeParam)
+  const isFromUrlDirect = isFromUrlRef.current
+
+  const [roomCode, setRoomCode] = useState(roomCodeParam ? roomCodeParam.toUpperCase() : "")
+  const [selectedAvatar, setSelectedAvatar] = useState("")
+  const [userChangedAvatar, setUserChangedAvatar] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
+  const [roomError, setRoomError] = useState("")
+  const [playerId, setPlayerId] = useState<string>("")
+  const [roomCodeError, setRoomCodeError] = useState("")
+  const [showScanner, setShowScanner] = useState(false)
+  const [showAccessDeniedAlert, setShowAccessDeniedAlert] = useState(false)
+
+  const [showAutoJoinScreen, setShowAutoJoinScreen] = useState(isFromUrlDirect)
+  const autoJoinFiredRef = useRef(false)
+  const isJoiningRef = useRef(false)
+  const stableAutoJoinAvatarRef = useRef<string>("")
+
+  useEffect(() => {
+    const message = searchParams.get("message")
+    if (message === 'host-left') {
+      window.location.href = '/?host-ended=1'
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pendingRedirect', roomCode ? `/join?room=${roomCode}` : '/join')
+      }
+      router.push('/login')
+    }
+  }, [authLoading, isAuthenticated, router, roomCode])
+
+  useEffect(() => {
+    setPlayerId(generatePlayerId())
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storedPlayer = localStorage.getItem('currentPlayer')
+        if (storedPlayer) {
+          const player = JSON.parse(storedPlayer)
+          if (player.id) setPlayerId(player.id)
+          if (!selectedAvatar && player.avatar) setSelectedAvatar(player.avatar)
+        }
+      } catch { }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isAuthenticated && userProfile?.avatar_url && !userChangedAvatar && !autoJoinFiredRef.current) {
+      setSelectedAvatar(userProfile.avatar_url)
+    }
+  }, [isAuthenticated, userProfile, userChangedAvatar])
+
+  const extractRoomCodeFromUrl = (url: string): string => {
+    if (!url) return ""
+    const match = url.match(/\b\d{6}\b/)
+    return match ? match[0] : ""
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pastedText = e.clipboardData.getData('text')
+    const extractedCode = extractRoomCodeFromUrl(pastedText)
+    if (extractedCode) {
+      setRoomCode(extractedCode)
+      e.preventDefault()
+    }
+  }
+
+  const handleJoinRoom = useCallback(async (codeToJoin?: string, avatarToUse?: string) => {
+    if (isJoiningRef.current) return
+    isJoiningRef.current = true
+    setRoomCodeError("")
+    setRoomError("")
+
+    const activeCode = (codeToJoin || roomCode).trim().toUpperCase()
+
+    if (!isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pendingRedirect', activeCode ? `/join?room=${activeCode}` : '/join')
+      }
+      router.push('/login')
+      isJoiningRef.current = false
+      return
+    }
+
+    if (!activeCode) {
+      setRoomCodeError("Kode ruang harus diisi")
+      isJoiningRef.current = false
+      return
+    }
+
+    setIsJoining(true)
+    let didNavigate = false
+
+    try {
+      const room = await roomManager.getRoom(activeCode)
+      const profileId = userProfile?.id || null
+
+      if (!room) {
+        setRoomError("Ruang tidak ditemukan. Periksa kembali kode ruang.")
+        setShowAutoJoinScreen(false)
+        isJoiningRef.current = false
+        return
+      }
+
+      if (room.gameStarted) {
+        setRoomError("Game sudah dimulai. Silakan gabung ke ruang baru.")
+        setShowAutoJoinScreen(false)
+        isJoiningRef.current = false
+        return
+      }
+
+      if (room.allowedUserIds && Array.isArray(room.allowedUserIds) && room.allowedUserIds.length > 0) {
+        const userId = userProfile?.id
+        if (!userId || !room.allowedUserIds.includes(userId)) {
+          setRoomError("Anda tidak terdaftar dalam kompetisi ini. Hanya peserta terdaftar yang bisa masuk.")
+          setShowAccessDeniedAlert(true)
+          setShowAutoJoinScreen(false)
+          isJoiningRef.current = false
+          return
+        }
+      }
+
+      const activeAvatar = avatarToUse !== undefined ? avatarToUse : (selectedAvatar || userProfile?.avatar_url || "")
+      const activeName = displayName.trim()
+
+      const existingPlayer = room.players.find((p: any) =>
+        p.nickname === activeName && p.avatar === activeAvatar
+      )
+
+      const getOrGeneratePlayerId = (currentId: string): string => {
+        if (currentId && currentId.trim() !== '') return currentId
+        if (typeof window !== 'undefined') {
+          try {
+            const stored = localStorage.getItem('currentPlayer')
+            if (stored) {
+              const p = JSON.parse(stored)
+              if (p.id && p.id.trim() !== '') return p.id
+            }
+          } catch { }
+        }
+        return generatePlayerId()
+      }
+
+      const validPlayerId = existingPlayer?.id || getOrGeneratePlayerId(playerId)
+      setPlayerId(validPlayerId)
+
+      if (existingPlayer) {
+        try {
+          const existingSessionId = sessionManager.getSessionIdFromStorage()
+          if (existingSessionId) {
+            await sessionManager.getOrCreateSession(
+              'player',
+              { id: validPlayerId, nickname: activeName, avatar: activeAvatar, roomCode: activeCode },
+              activeCode
+            )
+          }
+        } catch (err) {
+          console.warn("[Join] Error updating session:", err)
+        }
+      }
+
+      const success = existingPlayer
+        ? await roomManager.rejoinRoom(activeCode, { id: validPlayerId, nickname: activeName, avatar: activeAvatar }, profileId || undefined)
+        : await roomManager.joinRoom(activeCode, { id: validPlayerId, nickname: activeName, avatar: activeAvatar } as any, profileId || undefined)
+
+      if (success) {
+        const updatedRoom = roomManager.getCachedRoom(activeCode) || await roomManager.getRoom(activeCode)
+        const confirmedPlayer = updatedRoom?.players?.find((p: any) => p.nickname === activeName)
+        const finalPlayerId = confirmedPlayer?.id || validPlayerId
+
+        const playerData = {
+          id: finalPlayerId,
+          nickname: activeName,
+          avatar: activeAvatar,
+          roomCode: activeCode,
+          joinedAt: new Date(getServerNow()).toISOString()
+        }
+
+        try {
+          await sessionManager.getOrCreateSession('player', playerData, activeCode)
+        } catch (err) {
+          console.warn("[Join] Error creating session:", err)
+        }
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("currentPlayer", JSON.stringify(playerData))
+        }
+
+        didNavigate = true
+        router.push(`/player/${activeCode}/waiting`)
+      } else {
+        setRoomError("Gagal bergabung. Silakan coba lagi.")
+        setShowAutoJoinScreen(false)
+        isJoiningRef.current = false
+      }
+    } catch (error) {
+      console.error("[Join] Unexpected error:", error)
+      setRoomError("Gagal bergabung. Silakan coba lagi.")
+      setShowAutoJoinScreen(false)
+      isJoiningRef.current = false
+    } finally {
+      if (!didNavigate) setIsJoining(false)
+    }
+  }, [roomCode, selectedAvatar, isAuthenticated, userProfile, displayName, playerId, router])
+
+  const handleQRScan = (data: string) => {
+    const extractedCode = extractRoomCodeFromUrl(data)
+    if (extractedCode) {
+      setRoomCode(extractedCode)
+      setShowScanner(false)
+      setRoomCodeError("")
+      const avatar = selectedAvatar || userProfile?.avatar_url || ""
+      if (!selectedAvatar && avatar) setSelectedAvatar(avatar)
+      handleJoinRoom(extractedCode, avatar)
+    }
+  }
+
+  useEffect(() => {
+    if (autoJoinFiredRef.current) return
+    if (!isFromUrlDirect) return
+    if (authLoading) return
+    if (!isAuthenticated) return
+
+    const code = roomCode.trim().toUpperCase()
+    if (code.length !== 6) {
+      setShowAutoJoinScreen(false)
+      return
+    }
+
+    if (!displayName.trim()) return
+
+    autoJoinFiredRef.current = true
+    if (!stableAutoJoinAvatarRef.current) {
+      stableAutoJoinAvatarRef.current = userProfile?.avatar_url || selectedAvatar || ""
+    }
+    const avatar = stableAutoJoinAvatarRef.current
+    if (!selectedAvatar && avatar) setSelectedAvatar(avatar)
+    handleJoinRoom(code, avatar)
+  }, [isFromUrlDirect, authLoading, isAuthenticated, roomCode, displayName, handleJoinRoom])
+
+  useEffect(() => {
+    if (!showAutoJoinScreen) return
+    const timer = setTimeout(() => {
+      if (!autoJoinFiredRef.current) setShowAutoJoinScreen(false)
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [showAutoJoinScreen])
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <GameBackground>
+        <PageCornerLogos />
+        <JoinLoadingScreen title="MEMUAT..." subtitle="MEMERIKSA AKUN" />
+      </GameBackground>
+    )
+  }
+
+  if (showAutoJoinScreen && isFromUrlDirect && isAuthenticated) {
+    return (
+      <GameBackground>
+        <PageCornerLogos />
+        <JoinLoadingScreen title="BERGABUNG..." subtitle={`SELAMAT DATANG, ${displayName.toUpperCase()}`} />
+      </GameBackground>
+    )
+  }
+
+  return (
+    <GameBackground>
+      <PageCornerLogos />
+
+      <div className={`relative z-10 container mx-auto px-4 py-2 sm:py-4 ${pageCornerLogoContentPadding}`}>
+        <div className="max-w-md mx-auto mt-6 sm:-mt-10">
+          <JoinCard
+            roomCode={roomCode}
+            roomCodeError={roomCodeError}
+            roomError={roomError}
+            selectedAvatar={selectedAvatar}
+            profileAvatarUrl={userProfile?.avatar_url}
+            displayName={displayName}
+            isJoining={isJoining}
+            onRoomCodeChange={setRoomCode}
+            onPaste={handlePaste}
+            onScan={() => setShowScanner(true)}
+            onAvatarSelect={(a) => { setSelectedAvatar(a); setUserChangedAvatar(true) }}
+            onJoin={() => handleJoinRoom()}
+          />
+        </div>
+      </div>
+
+      {showAccessDeniedAlert && (
+        <AccessDeniedModal onClose={() => { setShowAccessDeniedAlert(false); router.replace('/') }} />
+      )}
+
+      {showScanner && (
+        <QRScanner
+          onScan={handleQRScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+    </GameBackground>
+  )
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <GameBackground>
+        <JoinLoadingScreen title="MEMUAT..." subtitle="MENYIAPKAN HALAMAN GABUNG" />
+      </GameBackground>
+    }>
+      <JoinPageContent />
+    </Suspense>
+  )
+}
+```

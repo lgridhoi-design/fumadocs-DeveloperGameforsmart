@@ -1,0 +1,34 @@
+---
+title: "TimeWarning"
+description: "Peringatan sisa waktu kepada pemain."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/[roomCode]/monitor/components/time-warning.tsx
+
+```tsx
+import { Clock } from "lucide-react"
+
+interface TimeWarningProps {
+  remainingTime: number
+}
+
+export function TimeWarning({ remainingTime }: TimeWarningProps) {
+  const timeUp = remainingTime <= 0
+  return (
+    <div className="mx-auto mb-4 w-full max-w-none rounded-2xl border border-red-500/50 bg-red-500/20 p-3 shadow-lg shadow-red-500/10 animate-pulse sm:mb-6 sm:p-4">
+      <div className="flex items-center justify-center gap-2 text-center">
+        <Clock className="h-4 w-4 text-red-400 sm:h-5 sm:w-5" />
+        <span className="text-sm font-black uppercase tracking-[0.18em] text-red-400 sm:text-base lg:text-lg">
+          {timeUp ? 'WAKTU HABIS!' : 'WAKTU HAMPIR HABIS!'}
+        </span>
+        <Clock className="h-4 w-4 text-red-400 sm:h-5 sm:w-5" />
+      </div>
+      <p className="mt-1 text-center text-xs text-red-200 sm:text-sm">
+        {timeUp ? 'Game akan segera berakhir' : 'Game akan berakhir saat waktu habis'}
+      </p>
+    </div>
+  )
+}
+```

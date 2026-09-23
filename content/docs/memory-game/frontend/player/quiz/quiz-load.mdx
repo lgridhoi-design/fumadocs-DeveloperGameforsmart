@@ -1,0 +1,144 @@
+---
+title: "QuizLoad"
+description: "Muat soal kuis dari Supabase."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/quiz/components/quiz-load.ts
+
+```ts
+import { getQuizById, getRandomQuestions, type Question } from "@/lib/quiz-data"
+import { isPlayersSupabaseConfigured, supabasePlayers } from "@/lib/supabase-players"
+import { supabase } from "@/lib/supabase"
+
+interface LoadedQuiz {
+  questions: Question[]
+  title: string
+}
+
+export async function loadQuizQuestions(
+  roomCode: string,
+  quizId: string,
+  questionCount: number,
+  defaultTitle: string
+): Promise<LoadedQuiz> {
+  const localQuiz = getQuizById(quizId)
+  let quizQuestions: Question[] = []
+  let title = ""
+
+  // 1. Prioritas utama: muat soal langsung dari tabel sessions (Supabase B)
+  try {
+    let rawQuestions: any[] = []
+    if (isPlayersSupabaseConfigured()) {
+      const { data: session } = await supabasePlayers
+        .from('sessions')
+        .select('current_questions, question_limit')
+        .eq('game_pin', roomCode)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (session) rawQuestions = session.current_questions || []
+    }
+    if (rawQuestions.length === 0) {
+      const { data: gameSession } = await supabase
+        .from('game_sessions')
+        .select('current_questions')
+        .eq('game_pin', roomCode)
+        .maybeSingle()
+      if (gameSession) rawQuestions = gameSession.current_questions || []
+    }
+
+    if (rawQuestions.length > 0) {
+      console.log('[Quiz] Questions loaded directly from sessions table')
+
+      // Kunci jawaban bisa berupa: index angka, teks opsi, atau id opsi
+      const computeCorrectIndex = (q: any): number => {
+        const rawCorrect = q.correct_answer ?? q.correct ?? q.answer
+        if (rawCorrect === undefined || rawCorrect === null) return -1
+        const correctStr = String(rawCorrect).trim()
+        const rawOpts: any[] = Array.isArray(q.answers)
+          ? q.answers
+          : Array.isArray(q.options)
+          ? q.options
+          : Array.isArray(q.choices)
+          ? q.choices
+          : []
+
+        if (!isNaN(Number(correctStr)) && Number.isFinite(Number(correctStr))) {
+          return Number(correctStr)
+        }
+        if (rawOpts.length > 0) {
+          const byText = rawOpts.findIndex((opt: any) => {
+            const optText =
+              typeof opt === 'object'
+                ? String(opt.answer ?? opt.text ?? opt.value ?? opt.label ?? '')
+                : String(opt)
+            return (
+              optText.trim() === correctStr ||
+              optText.trim().toLowerCase() === correctStr.toLowerCase()
+            )
+          })
+          if (byText !== -1) return byText
+          const byId = rawOpts.findIndex(
+            (opt: any) =>
+              typeof opt === 'object' && opt !== null && String(opt.id).trim() === correctStr
+          )
+          if (byId !== -1) return byId
+        }
+        return -1
+      }
+
+      // Map dari format DB ke format internal (correct ikut dibawa untuk evaluasi lokal)
+      quizQuestions = rawQuestions.map((q: any, index: number) => {
+        const options: (string | { text: string; image?: string })[] = (q.options || []).map((opt: any) => {
+          if (opt.image && opt.answer && opt.answer !== '.') {
+            return { text: String(opt.answer), image: String(opt.image) }
+          } else if (opt.image && (!opt.answer || opt.answer === '.')) {
+            return { text: '', image: String(opt.image) }
+          }
+          return String(opt.answer ?? '')
+        }).filter((o: any) => typeof o !== 'string' || o !== '')
+
+        return {
+          id: Number.isFinite(Number(q.id)) ? Number(q.id) : index + 1,
+          statsQuestionId: q.id,
+          optionStatsIds: options.map((_: any, i: number) => i),
+          question: q.question ?? '',
+          image: q.image ?? undefined,
+          options,
+          correct: computeCorrectIndex(q),
+          explanation: undefined,
+          type: q.type ?? 'multiple_choice',
+        }
+      })
+      title = defaultTitle
+    }
+  } catch (dbErr) {
+    console.warn('[Quiz] Failed to load questions from sessions table, falling back:', dbErr)
+  }
+
+  // 2. Fallback: soal lokal (sudah ada di bundle JS)
+  if (quizQuestions.length === 0 && localQuiz) {
+    console.log('[Quiz] Using local quiz data as fallback')
+    const qList = localQuiz.questions || []
+    const countToFetch = questionCount === 0 ? qList.length : questionCount
+    quizQuestions = getRandomQuestions(localQuiz, countToFetch)
+    title = localQuiz.title
+  }
+
+  // 3. Fallback terakhir: math-basic dari local data
+  if (quizQuestions.length === 0) {
+    console.warn('[Quiz] ⚠️ No questions from API or local, using math-basic fallback')
+    const fallbackQuiz = getQuizById('math-basic')
+    if (fallbackQuiz) {
+      const fbQList = fallbackQuiz.questions || []
+      const countToFetch = questionCount === 0 ? fbQList.length : questionCount
+      quizQuestions = getRandomQuestions(fallbackQuiz, countToFetch)
+      title = fallbackQuiz.title
+    }
+  }
+
+  return { questions: quizQuestions, title }
+}
+```

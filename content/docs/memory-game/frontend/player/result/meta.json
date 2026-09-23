@@ -1,0 +1,14 @@
+{
+  "title": "Player Result",
+  "pages": [
+    "index",
+    "types",
+    "use-result-data",
+    "player-result-logic",
+    "player-result-card",
+    "result-stats-grid",
+    "result-screens",
+    "result-background",
+    "floating-action-buttons"
+  ]
+}

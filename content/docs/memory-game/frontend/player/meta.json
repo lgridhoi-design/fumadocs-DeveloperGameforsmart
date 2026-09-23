@@ -1,0 +1,4 @@
+{
+  "title": "Player",
+  "pages": ["index", "waiting", "countdown", "quiz", "memory-challenge", "result"]
+}

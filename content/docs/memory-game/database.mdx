@@ -1,0 +1,121 @@
+---
+title: Database
+description: "Satu project Supabase — tiga tabel inti (sessions, participants, quizzes) plus realtime untuk sinkronisasi state game."
+---
+
+# Database
+
+Sesuai pola minimal, bab ini memakai **satu project Supabase** dengan **3 tabel inti**. Real-time dipakai untuk menyinkronkan room/pemain antar perangkat. Semua operasi memakai **anon key** (tanpa login), jadi RLS dibuka untuk baca/tulis — cukup aman karena hanya berisi data game non-sensitif.
+
+> Jalankan seluruh SQL di bawah berurutan di **SQL Editor** project Supabase (tabel → realtime → RLS).
+
+## 1. Tabel `sessions`
+
+Satu baris = satu room game.
+
+```sql
+-- Generator id 20 karakter (tanpa ekstensi uuid)
+CREATE OR REPLACE FUNCTION generate_xid() RETURNS TEXT AS $$
+DECLARE
+    chars TEXT := '0123456789abcdefghijklmnopqrstuv';
+    result TEXT := '';
+    i INTEGER;
+BEGIN
+    FOR i IN 1..20 LOOP
+        result := result || substr(chars, floor(random() * 32)::int + 1, 1);
+    END LOOP;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY DEFAULT generate_xid(),
+    game_pin TEXT NOT NULL UNIQUE,
+    host_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'waiting',
+    questions JSONB DEFAULT '[]',
+    countdown_started_at TIMESTAMPTZ,
+    countdown_duration_seconds INTEGER DEFAULT 10,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    CONSTRAINT valid_status CHECK (status IN ('waiting', 'active', 'finished'))
+);
+```
+
+Kolom penting:
+
+- `game_pin` — kode 6 digit room, unik.
+- `status` — hanya 3 nilai: `waiting`, `active`, `finished`.
+- `questions` — array soal sesi (sudah diacak & dibatasi sesuai pengaturan host).
+- `countdown_started_at` — diset saat countdown dimulai; fase `countdown` **diderivasi** dari kolom ini, bukan disimpan sebagai `status`.
+
+## 2. Tabel `participants`
+
+Satu baris per pemain sehingga skor/status tiap pemain bisa di-update paralel tanpa konflik.
+
+```sql
+CREATE TABLE participants (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    game_pin TEXT NOT NULL,
+    nickname TEXT NOT NULL,
+    avatar TEXT DEFAULT '',
+    score INTEGER DEFAULT 0,
+    questions_answered INTEGER DEFAULT 0,
+    answers JSONB DEFAULT '[]',
+    last_heartbeat TIMESTAMPTZ,
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(game_pin, nickname)
+);
+```
+
+`answers` berisi array jawaban per soal: `[{ question_id, answer_id, is_correct, points_earned, created_at }]`.
+
+## 3. Tabel `quizzes`
+
+Daftar kuis yang di-host. Soal disimpan dalam satu kolom JSONB.
+
+```sql
+CREATE TABLE quizzes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    difficulty TEXT NOT NULL,
+    questions JSONB DEFAULT '[]'
+);
+```
+
+Dari tabel inilah halaman pilih kuis membaca daftar (`title` + `description`) dan halaman host memuat `questions` ke dalam sesi.
+
+## 4. Realtime
+
+Daftarkan dua tabel game ke publikasi realtime agar perubahan (pemain gabung, skor naik, status berubah) langsung terkirim ke semua klien:
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE participants;
+```
+
+Di client, subscribe memakai `supabase.channel(...).on('postgres_changes', ...)` — pola ini dipakai host untuk daftar pemain dan pemain untuk transisi layar.
+
+## 5. RLS sederhana
+
+Karena semua operasi memakai anon key, buka akses ke tabel game:
+
+```sql
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE participants ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all sessions" ON sessions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all participants" ON participants FOR ALL USING (true) WITH CHECK (true);
+```
+
+## Ringkasan
+
+| Tabel | Fungsi |
+| --- | --- |
+| `sessions` | Room + state game (pin, status, soal, timer) |
+| `participants` | Data per pemain (skor, jawaban, heartbeat) |
+| `quizzes` | Daftar kuis beserta soalnya |
+
+> Versi asli proyek memakai **dua database** (utama + players), RPC `update_player_progress`, dan cleanup `pg_cron`. Semua itu sengaja dihilangkan di sini agar cukup dengan satu project Supabase dan langsung berfungsi.

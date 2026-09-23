@@ -1,0 +1,101 @@
+---
+title: "SettingsCard"
+description: "Kartu pengaturan room dan tombol buat room."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/quiz-settings/components/settings-card.tsx
+
+```tsx
+import { Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { TimeLimitSelect } from "./time-limit-select"
+import { QuestionCountSelect } from "./question-count-select"
+import { GameModeButtons } from "./game-mode-buttons"
+
+interface SettingsCardProps {
+  isLoadingQuiz: boolean
+  quizTitle?: string
+  timeLimit: string
+  onTimeLimitChange: (value: string) => void
+  questionCount: string
+  questionOptions: number[]
+  onQuestionCountChange: (value: string) => void
+  gameMode: "easy" | "medium" | "hard"
+  onGameModeChange: (value: "easy" | "medium" | "hard") => void
+  isTryOut: boolean
+  isCreatingRoom: boolean
+  onCreateRoom: () => void
+}
+
+export function SettingsCard({
+  isLoadingQuiz,
+  quizTitle,
+  timeLimit,
+  onTimeLimitChange,
+  questionCount,
+  questionOptions,
+  onQuestionCountChange,
+  gameMode,
+  onGameModeChange,
+  isTryOut,
+  isCreatingRoom,
+  onCreateRoom,
+}: SettingsCardProps) {
+  return (
+    <div className="relative pixel-settings-container">
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+      <div className="relative bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg border-2 sm:border-4 border-black shadow-2xl pixel-settings-card">
+        <div className="p-4 sm:p-5 space-y-4">
+
+          <div className="text-center">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 sm:border-4 border-black rounded-lg flex items-center justify-center mx-auto mb-3 pixel-settings-icon">
+              <Settings className="h-6 w-6 sm:h-7 sm:w-7 text-black" />
+            </div>
+
+            {isLoadingQuiz ? (
+              <div className="bg-white border-2 border-black rounded-lg p-2 sm:p-3 pixel-quiz-info">
+                <div className="text-center">
+                  <div className="animate-pulse">
+                    <div className="h-5 bg-gray-300 rounded mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                  </div>
+                  <p className="text-[8px] text-gray-500 pixel-font mt-1">Memuat data kuis...</p>
+                </div>
+              </div>
+            ) : quizTitle ? (
+              <div className="bg-white border-2 border-black rounded-lg p-2 sm:p-3 pixel-quiz-info">
+                <h2 className="text-xs sm:text-sm font-bold text-black pixel-font leading-tight text-center break-words">
+                  {quizTitle}
+                </h2>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <TimeLimitSelect value={timeLimit} onChange={onTimeLimitChange} />
+            <QuestionCountSelect value={questionCount} options={questionOptions} onChange={onQuestionCountChange} />
+            <GameModeButtons value={gameMode} onChange={onGameModeChange} />
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="relative pixel-button-container">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg transform rotate-1 pixel-button-shadow"></div>
+              <Button
+                onClick={onCreateRoom}
+                disabled={isCreatingRoom || isLoadingQuiz}
+                className="relative w-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-black rounded-lg text-black hover:bg-gradient-to-br hover:from-green-400 hover:to-emerald-400 transform hover:scale-105 transition-all duration-200 font-bold disabled:hover:scale-100 min-h-[40px] sm:min-h-[44px]"
+              >
+                <span className="pixel-font text-[10px] sm:text-xs">
+                  {isTryOut ? "MULAI LATIHAN" : "BUAT RUANG"}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```

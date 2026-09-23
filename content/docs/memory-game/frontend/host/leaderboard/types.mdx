@@ -1,0 +1,50 @@
+---
+title: "Types"
+description: "Tipe data dan formatter untuk leaderboard."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/host/leaderboard/components/types.ts
+
+```ts
+export interface LeaderboardPlayer {
+  id: string
+  nickname: string
+  avatar: string
+  quizScore?: number
+  isHost: boolean
+  timeSpent?: number
+  questionsAnswered?: number
+  currentQuestion?: number
+  answers?: unknown[]
+  joinedAt?: string
+}
+
+export interface LeaderboardRoom {
+  code: string
+  hostId: string
+  players: LeaderboardPlayer[]
+  settings: {
+    questionCount: number
+    totalTimeLimit: number
+    gameMode?: string
+  }
+  status: "waiting" | "countdown" | "quiz" | "memory" | "finished"
+  questions?: unknown[]
+  createdAt: string
+  startedAt?: string
+  gameStarted: boolean
+  countdownStartTime?: string
+  countdownDuration?: number
+  quizId?: string
+  quizTitle?: string
+}
+
+export function formatTime(seconds: number): string {
+  if (!seconds || seconds <= 0) return "00:00"
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+```

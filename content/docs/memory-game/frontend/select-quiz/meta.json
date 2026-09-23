@@ -1,0 +1,13 @@
+{
+  "title": "Select Quiz",
+  "pages": [
+    "index",
+    "select-quiz-content",
+    "categories",
+    "quiz-filter-bar",
+    "quiz-card",
+    "quiz-detail-dialog",
+    "pagination",
+    "empty-state"
+  ]
+}

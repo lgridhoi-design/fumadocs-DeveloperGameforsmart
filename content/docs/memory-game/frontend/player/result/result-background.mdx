@@ -1,0 +1,60 @@
+---
+title: "ResultBackground"
+description: "Latar peringkat pemenang (gold/silver/bronze)."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/result-background.tsx
+
+```tsx
+"use client"
+
+import { PixelBackgroundElements } from "@/components/layout/pixel-background-elements"
+
+export function ResultBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <PixelBackgroundElements />
+      <div className="absolute top-20 left-10 w-32 h-32 opacity-20 animate-float">
+        <div className="w-full h-full rounded-full bg-gradient-to-r from-blue-400 to-purple-400 blur-xl"></div>
+      </div>
+      <div className="absolute top-40 right-20 w-24 h-24 opacity-30 animate-float-delayed">
+        <div className="w-full h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-400 blur-lg"></div>
+      </div>
+      <div className="absolute bottom-32 left-1/4 w-40 h-40 opacity-25 animate-float-slow">
+        <div className="w-full h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-400 blur-2xl"></div>
+      </div>
+      <div className="absolute bottom-20 right-1/3 w-28 h-28 opacity-35 animate-float-delayed-slow">
+        <div className="w-full h-full rounded-full bg-gradient-to-r from-green-400 to-cyan-400 blur-xl"></div>
+      </div>
+
+      <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 1000 1000">
+        <defs>
+          <linearGradient id="neuralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="50%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#06b6d4" />
+          </linearGradient>
+        </defs>
+        <g className="animate-pulse">
+          <line x1="100" y1="200" x2="300" y2="150" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <line x1="300" y1="150" x2="500" y2="300" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <line x1="500" y1="300" x2="700" y2="250" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <line x1="200" y1="400" x2="400" y2="350" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <line x1="400" y1="350" x2="600" y2="500" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <line x1="600" y1="500" x2="800" y2="450" stroke="url(#neuralGradient)" strokeWidth="2" />
+          <circle cx="100" cy="200" r="4" fill="#3b82f6" className="animate-ping" />
+          <circle cx="300" cy="150" r="4" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '0.5s' }} />
+          <circle cx="500" cy="300" r="4" fill="#06b6d4" className="animate-ping" style={{ animationDelay: '1s' }} />
+          <circle cx="700" cy="250" r="4" fill="#3b82f6" className="animate-ping" style={{ animationDelay: '1.5s' }} />
+          <circle cx="200" cy="400" r="4" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '2s' }} />
+          <circle cx="400" cy="350" r="4" fill="#06b6d4" className="animate-ping" style={{ animationDelay: '2.5s' }} />
+          <circle cx="600" cy="500" r="4" fill="#3b82f6" className="animate-ping" style={{ animationDelay: '3s' }} />
+          <circle cx="800" cy="450" r="4" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '3.5s' }} />
+        </g>
+      </svg>
+    </div>
+  )
+}
+```

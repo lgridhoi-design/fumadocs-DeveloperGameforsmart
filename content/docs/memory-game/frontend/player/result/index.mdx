@@ -1,0 +1,126 @@
+---
+title: "Player Result"
+description: "Kode lengkap halaman hasil pemain — useResultData, logic ranking, kartu hasil, grid statistik, layar error/loading, background, dan tombol aksi."
+---
+
+#### app/player/[roomCode]/result/page.tsx
+
+```tsx
+"use client"
+
+import { Suspense } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { getTotalQuestions } from "@/lib/player-quiz-progress"
+import { PageCornerLogos } from "@/components/layout/page-corner-logos"
+import { PixelBackgroundElements } from "@/components/layout/pixel-background-elements"
+import { FullscreenButton } from "@/components/guards/fullscreen-button"
+import { PageTitle } from '@/components/layout/page-title'
+import { ResultBackground } from "./components/result-background"
+import { ResultErrorScreen, ResultLoadingScreen, ResultNotFoundScreen } from "./components/result-screens"
+import { PlayerResultCard } from "./components/player-result-card"
+import { ResultStatsGrid } from "./components/result-stats-grid"
+import { FloatingActionButtons } from "./components/floating-action-buttons"
+import { useResultData } from "./components/use-result-data"
+
+function ResultPageContent() {
+  const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const isTryOut = searchParams.get('mode') === 'tryout'
+  const roomCode = params.roomCode as string
+
+  const { room, loading, error, playerRanking, isOpeningStats, retry, openStatistics } =
+    useResultData(roomCode, isTryOut)
+
+  if (error) {
+    return (
+      <ResultErrorScreen
+        error={error}
+        onRetry={retry}
+      />
+    )
+  }
+
+  if (loading) {
+    return <ResultLoadingScreen />
+  }
+
+  if (!room || !playerRanking) {
+    return <ResultNotFoundScreen />
+  }
+
+  const totalQuestions = getTotalQuestions(room)
+
+  const playerCorrectAnswers = playerRanking.player.correctAnswers
+  const correctCount = typeof playerCorrectAnswers === 'number'
+    ? Math.max(0, Math.min(totalQuestions, playerCorrectAnswers))
+    : (() => {
+      const playerScore = playerRanking.player.quizScore ?? 0
+      if (totalQuestions <= 0) return 0
+      if (playerScore > totalQuestions) {
+        return Math.max(0, Math.min(totalQuestions, Math.round((playerScore / 100) * totalQuestions)))
+      }
+      return Math.max(0, Math.min(totalQuestions, playerScore))
+    })()
+
+  const formattedTime = playerRanking.player.timeSpent !== undefined
+    ? `${Math.floor(playerRanking.player.timeSpent / 60).toString().padStart(2, '0')}:${(playerRanking.player.timeSpent % 60).toString().padStart(2, '0')}`
+    : "00:00"
+
+  const isFinished = room.status === "finished"
+
+  return (
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483)' }}>
+      <div className="absolute inset-0 opacity-20">
+        <div className="pixel-grid"></div>
+      </div>
+
+      <div className="absolute inset-0 opacity-10">
+        <div className="scanlines"></div>
+      </div>
+
+      <ResultBackground />
+
+      <FloatingActionButtons
+        onHome={() => router.push("/")}
+        onOpenStats={() => {
+          if (room.status !== 'finished') return
+          void openStatistics()
+        }}
+        statsDisabled={room.status !== 'finished'}
+        isOpeningStats={isOpeningStats}
+      />
+
+      <PageCornerLogos />
+
+      <div className="relative z-10 container mx-auto px-4 py-8 mt-1">
+        <PlayerResultCard playerRanking={playerRanking} />
+
+        <ResultStatsGrid
+          rank={playerRanking.rank}
+          totalScore={playerRanking.totalScore}
+          correctCount={correctCount}
+          totalQuestions={totalQuestions}
+          formattedTime={formattedTime}
+          isFinished={isFinished}
+        />
+      </div>
+
+      <FullscreenButton position="bottom-right" offsetX={16} offsetY={16} className="hidden lg:block" />
+
+      <PixelBackgroundElements />
+    </div>
+  )
+}
+
+export default function ResultPage() {
+  return (
+    <>
+      <PageTitle title={`Result`} />
+      <Suspense fallback={<ResultLoadingScreen />}>
+        <ResultPageContent />
+      </Suspense>
+    </>
+  )
+}
+```

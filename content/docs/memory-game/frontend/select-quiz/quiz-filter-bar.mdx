@@ -1,0 +1,215 @@
+---
+title: "QuizFilterBar"
+description: "Bilah pencarian dan filter bahasa."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/select-quiz/components/quiz-filter-bar.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect } from "react"
+import { Search, Check, ChevronUp, ChevronDown, Heart, User, Globe } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { categories, getLanguageDisplayName, translateCategoryFn } from "./categories"
+
+interface LanguageOption {
+  key: string
+  name: string
+  name_local?: string
+  primaryCountry?: string
+}
+
+interface QuizFilterBarProps {
+  searchInput: string
+  onSearchInputChange: (value: string) => void
+  onSearch: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  activeTab: "quiz" | "my-quiz" | "favorite"
+  onTabChange: (tab: "quiz" | "my-quiz" | "favorite") => void
+  categoryFilter: string
+  onCategoryChange: (category: string) => void
+  languageFilter: string
+  onLanguageChange: (language: string) => void
+  availableLanguages: LanguageOption[]
+  getCategoryIcon: (category: string) => React.ReactNode
+}
+
+export function QuizFilterBar({
+  searchInput,
+  onSearchInputChange,
+  onSearch,
+  activeTab,
+  onTabChange,
+  categoryFilter,
+  onCategoryChange,
+  languageFilter,
+  onLanguageChange,
+  availableLanguages,
+  getCategoryIcon,
+}: QuizFilterBarProps) {
+  const [isSelectAllExpanded, setIsSelectAllExpanded] = useState(false)
+  const [isLangExpanded, setIsLangExpanded] = useState(false)
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-3 lg:gap-4">
+
+      <div className="relative flex-1 min-w-[200px] order-1">
+        <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+        <Input
+          placeholder="Cari kuis"
+          value={searchInput}
+          onChange={(e) => onSearchInputChange(e.target.value)}
+          onKeyDown={onSearch}
+          className="h-10 sm:h-11 w-full min-w-0 rounded-none border-2 border-black bg-white ps-11 pe-4 text-sm font-bold text-black shadow-lg placeholder:pixel-font placeholder:text-[9px] placeholder:text-gray-500 focus:border-blue-600 sm:placeholder:text-[10px] pixel-font"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 sm:flex gap-2 shrink-0 order-2 lg:order-4 w-full sm:w-auto">
+        <TabButton
+          active={activeTab === "my-quiz"}
+          onClick={() => onTabChange(activeTab === "my-quiz" ? "quiz" : "my-quiz")}
+          icon={<User className="h-4 w-4 shrink-0" />}
+          label="Kuis Saya"
+        />
+        <TabButton
+          active={activeTab === "favorite"}
+          onClick={() => onTabChange(activeTab === "favorite" ? "quiz" : "favorite")}
+          icon={
+            <Heart
+              className="h-4 w-4 shrink-0 text-pink-500"
+              fill={activeTab === "favorite" ? "currentColor" : "none"}
+            />
+          }
+          label="Favorit"
+        />
+      </div>
+
+      <div className="relative w-full sm:w-44 md:w-48 shrink-0 order-3 lg:order-2">
+        <Button
+          type="button"
+          onClick={() => { setIsSelectAllExpanded(!isSelectAllExpanded); setIsLangExpanded(false) }}
+          className="flex h-10 sm:h-11 w-full items-center justify-between gap-2 rounded-none border-2 border-black bg-white px-3 text-black shadow-lg hover:bg-gray-100"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4">
+              {getCategoryIcon(categoryFilter)}
+            </span>
+            <span className="truncate text-start text-[9px] font-bold leading-tight pixel-font sm:text-[10px]">
+              {categoryFilter === "all" ? "SEMUA KATEGORI" : translateCategoryFn(categoryFilter)}
+            </span>
+          </div>
+          {isSelectAllExpanded ? (
+            <ChevronUp className="h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          )}
+        </Button>
+        {isSelectAllExpanded && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-[min(50vh,280px)] overflow-y-auto border-2 border-black bg-white shadow-lg">
+            {[...categories]
+              .sort((a, b) => {
+                if (a.value === "all") return -1;
+                if (b.value === "all") return 1;
+                return String(a.label).localeCompare(String(b.label));
+              })
+              .map((cat) => (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => {
+                    onCategoryChange(cat.value)
+                    setIsSelectAllExpanded(false)
+                  }}
+                  className={`flex h-10 sm:h-11 w-full items-center justify-between px-3 text-start text-[9px] font-bold pixel-font hover:bg-gray-200 sm:text-[10px] ${categoryFilter === cat.value ? "bg-gray-200" : ""}`}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4">
+                      {cat.icon}
+                    </span>
+                    <span className="truncate">{cat.label}</span>
+                  </div>
+                  {categoryFilter === cat.value && <Check className="h-4 w-4 shrink-0 text-green-600" />}
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+
+      <div className="relative w-full sm:w-44 md:w-48 shrink-0 order-4 lg:order-3">
+        <Button
+          type="button"
+          onClick={() => { setIsLangExpanded(!isLangExpanded); setIsSelectAllExpanded(false) }}
+          className="flex h-10 sm:h-11 w-full items-center justify-between gap-2 rounded-none border-2 border-black bg-white px-3 text-black shadow-lg hover:bg-gray-100"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4">
+              <Globe className="h-4 w-4 text-teal-500" />
+            </span>
+            <span className="truncate text-start text-[9px] font-bold leading-tight pixel-font sm:text-[10px] uppercase">
+              {getLanguageDisplayName(languageFilter)}
+            </span>
+          </div>
+          {isLangExpanded ? (
+            <ChevronUp className="h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          )}
+        </Button>
+        {isLangExpanded && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-[min(50vh,280px)] overflow-y-auto border-2 border-black bg-white shadow-lg">
+            <button
+              type="button"
+              onClick={() => { onLanguageChange('all'); setIsLangExpanded(false) }}
+              className={`flex h-10 sm:h-11 w-full items-center justify-between px-3 text-start text-[9px] font-bold pixel-font hover:bg-gray-200 sm:text-[10px] ${languageFilter === 'all' ? 'bg-gray-200' : ''}`}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center [&_svg]:h-4 [&_svg]:w-4">
+                  <Globe className="h-4 w-4 text-teal-500" />
+                </span>
+                <span className="truncate uppercase">SEMUA BAHASA</span>
+              </div>
+              {languageFilter === 'all' && <Check className="h-4 w-4 shrink-0 text-green-600" />}
+            </button>
+            {availableLanguages.map((lang) => {
+              const isSelected = languageFilter === lang.key
+              return (
+                <button
+                  key={lang.key}
+                  type="button"
+                  onClick={() => { onLanguageChange(lang.key); setIsLangExpanded(false) }}
+                  className={`flex h-10 sm:h-11 w-full items-center justify-between px-3 text-start text-[9px] font-bold pixel-font hover:bg-gray-200 sm:text-[10px] ${isSelected ? 'bg-gray-200' : ''}`}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center font-black text-[12px]">
+                      {lang.primaryCountry}
+                    </span>
+                    <span className="truncate uppercase">{getLanguageDisplayName(lang.key)}</span>
+                  </div>
+                  {isSelected && <Check className="h-4 w-4 shrink-0 text-green-600" />}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TabButton({ active, onClick, icon, label }: any) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-[44px] w-full items-center justify-center gap-1.5 border-2 border-black px-3 py-2.5 text-[10px] font-bold shadow-lg transition-all duration-200 pixel-font sm:px-3 lg:px-5 sm:text-[10px] ${active ? "bg-blue-500 text-white" : "bg-white text-black hover:bg-gray-100"
+        }`}
+    >
+      {icon}
+      <span className="truncate sm:hidden lg:block">{label}</span>
+    </button>
+  )
+}
+```

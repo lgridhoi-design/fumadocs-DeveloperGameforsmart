@@ -1,0 +1,11 @@
+{
+  "title": "Monitor",
+  "pages": [
+    "index",
+    "monitor-loading-screen",
+    "monitor-header",
+    "time-warning",
+    "player-progress-grid",
+    "end-game-dialog"
+  ]
+}

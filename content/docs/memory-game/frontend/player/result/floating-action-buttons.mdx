@@ -1,0 +1,132 @@
+---
+title: "FloatingActionButtons"
+description: "Tombol aksi KELUAR dan kembali ke home."
+---
+
+Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+
+#### app/player/[roomCode]/result/components/floating-action-buttons.tsx
+
+```tsx
+"use client"
+
+import { useState } from "react"
+import { createPortal } from "react-dom"
+import { Home, BarChart3 } from "lucide-react"
+
+interface FloatingActionButtonsProps {
+  onHome: () => void
+  onOpenStats: () => void
+  statsDisabled: boolean
+  isOpeningStats: boolean
+}
+
+export function FloatingActionButtons({ onHome, onOpenStats, statsDisabled, isOpeningStats }: FloatingActionButtonsProps) {
+  const [showHomeTooltip, setShowHomeTooltip] = useState(false)
+  const [showStatTooltip, setShowStatTooltip] = useState(false)
+
+  if (typeof window === 'undefined') return null
+
+  return createPortal(
+    <>
+      {/* Back to Home - Left Side (desktop) */}
+      <div className="hidden lg:flex lg:fixed lg:left-3 lg:top-1/2 lg:-translate-y-1/2 lg:z-[99999] lg:flex-col lg:gap-3 sm:gap-4">
+        <div className="relative group">
+          <button
+            onClick={onHome}
+            onMouseEnter={() => setShowHomeTooltip(true)}
+            onMouseLeave={() => setShowHomeTooltip(false)}
+            className="flex h-8 w-8 items-center justify-center transition-all hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 sm:h-11 sm:w-11 md:h-12 md:w-12"
+            style={{
+              background: '#8b5cf6',
+              border: '2px solid black',
+              borderRadius: '0px',
+              boxShadow: `3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)`,
+              imageRendering: 'pixelated',
+            }}
+          >
+            <Home className="h-3.5 w-3.5 text-white transition-transform duration-300 group-hover:rotate-12 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+          </button>
+          {showHomeTooltip && (
+            <div className="absolute left-full ml-2 sm:ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap">
+              <div className="relative bg-black text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 border-black shadow-lg">
+                Kembali ke Beranda
+                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-black"></div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Statistics - Right Side (desktop) */}
+      <div className="hidden lg:block lg:fixed lg:right-3 lg:top-1/2 lg:-translate-y-1/2 lg:z-[99999]">
+        <div className="relative group">
+          <button
+            onClick={onOpenStats}
+            onMouseEnter={() => setShowStatTooltip(true)}
+            onMouseLeave={() => setShowStatTooltip(false)}
+            disabled={statsDisabled || isOpeningStats}
+            className="flex h-8 w-8 items-center justify-center transition-all hover:scale-110 active:translate-x-0.5 active:translate-y-0.5 sm:h-11 sm:w-11 md:h-12 md:w-12 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: '#ec4899',
+              border: '2px solid black',
+              borderRadius: '0px',
+              boxShadow: `3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)`,
+              imageRendering: 'pixelated',
+            }}
+          >
+            {isOpeningStats ? (
+              <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <BarChart3 className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4 md:h-5 md:w-5" />
+            )}
+          </button>
+          {showStatTooltip && (
+            <div className="absolute right-full mr-2 sm:mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap">
+              <div className="relative bg-black text-white text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 border-black shadow-lg">
+                Statistik
+                <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile bottom center control bar */}
+      <div className="fixed bottom-4 left-1/2 z-[99999] -translate-x-1/2 flex items-center gap-3 rounded-lg bg-slate-950/80 border border-white/10 p-3 shadow-2xl backdrop-blur-lg lg:hidden">
+        <button
+          onClick={onHome}
+          className="flex h-11 w-11 items-center justify-center rounded-sm transition-all hover:scale-110 active:scale-95"
+          style={{
+            background: '#8b5cf6',
+            border: '2px solid black',
+            borderRadius: '0px',
+            boxShadow: '3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)',
+            imageRendering: 'pixelated',
+          }}
+          aria-label="Home"
+        >
+          <Home className="h-4 w-4 text-white" />
+        </button>
+
+        <button
+          onClick={onOpenStats}
+          disabled={statsDisabled}
+          className="flex h-11 w-11 items-center justify-center rounded-sm transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: '#ec4899',
+            border: '2px solid black',
+            borderRadius: '0px',
+            boxShadow: '3px 3px 0px black, inset -2px -2px 0px rgba(0,0,0,0.2)',
+            imageRendering: 'pixelated',
+          }}
+          aria-label="Stats"
+        >
+          <BarChart3 className="h-4 w-4 text-white" />
+        </button>
+      </div>
+    </>,
+    document.body
+  )
+}
+```

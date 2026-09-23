@@ -1,0 +1,110 @@
+---
+title: Deploy
+description: Men-deploy Memory Game ke Vercel — import repo, lampirkan env produksi, dan atur redirect OAuth.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Deploy
+
+Versi tutorial ini memakai **Vercel** sebagai hosting. Build & deploy otomatis terhubung ke git repo (GitHub/GitLab/Bitbucket) — tidak perlu server sendiri, PM2, atau CI manual. Cukup push commit, Vercel yang membangun aplikasinya.
+
+---
+
+## Target Deployment
+
+| Aspek | Nilai |
+| --- | --- |
+| Hosting | Vercel (framework Next.js terdeteksi otomatis) |
+| Build | `npm run build` (di-generate Vercel) |
+| Output | `.next` (standar Next.js) |
+| Domain | `https://memoryquiz.gameforsmart.com` |
+
+---
+
+## 1. Push ke Git
+
+Pastikan seluruh proyek sudah masuk ke repo git (config Next.js, `.env.local` **jangan** di-commit — isi env langsung di Vercel):
+
+```bash
+git add .
+git commit -m "chore: siap deploy"
+git push origin main
+```
+
+---
+
+## 2. Import Project di Vercel
+
+1. Buka `https://vercel.com` → **Add New → Project**.
+2. Pilih repo Memory Game → **Import**.
+3. Framework Preset akan otomatis terdeteksi sebagai **Next.js** (build command `npm run build`, output `.next`).
+4. Klik **Deploy** — Vercel langsung membangun & memberi URL `https://<project>.vercel.app`.
+
+---
+
+## 3. Lampirkan Environment Variables
+
+Di tab **Settings → Environment Variables**, tambahkan (nilai sama dengan lokal, bedanya `NEXT_PUBLIC_SITE_URL` diisi domain produksi):
+
+```plaintext
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=https://memoryquiz.gameforsmart.com
+```
+
+Tambahkan ke scope **Production, Preview, dan Development** lalu redeploy aplikasinya. `lib/supabase.ts` membaca tiga variabel ini saat runtime di browser.
+
+---
+
+## 4. Sesuaikan Google OAuth untuk Produksi
+
+1. Di **Google Cloud Console** tambah redirect URI `https://memoryquiz.gameforsmart.com/auth/callback`.
+2. Di **Supabase** (Authentication → Providers → Google) pastikan redirect `https://your-project-id.supabase.co/auth/v1/callback`.
+3. `NEXT_PUBLIC_SITE_URL` di set ke domain produksi (sudah di langkah 3) — dipakai redirect setelah login.
+
+---
+
+## 5. Domain Kustom
+
+1. **Vercel → Project → Settings → Domains** → tambahkan `memoryquiz.gameforsmart.com`.
+2. Ikuti instruksi DNS yang diberikan Vercel (A record ke IP Vercel atau CNAME `cname.vercel-dns.com`).
+3. Vercel otomatis menerbitkan HTTPS (sertifikat Let's Encrypt) untuk domain kustom.
+
+---
+
+## Pertimbangan Khusus
+
+### PWA (next-pwa)
+
+Service worker dihasilkan saat build oleh `next-pwa`. Di Vercel, cuma pratinjau terbaru yang disajikan, jadi pengguna mungkin perlu me-refresh sekali setelah rilis baru agar service worker ter-update — wajar untuk aplikasi PWA.
+
+### Realtime & Route Handler
+
+`app/api/*` dan Supabase Realtime (websocket) berjalan normal di Vercel karena keduanya dipanggil dari sisi client/serverless. Pastikan project Supabase punya akses internet publik (bukan di bawah firewall internal).
+
+### Build tidak menghentikan deploy
+
+`next.config.mjs` menonaktifkan ESLint & TypeScript error saat build (`ignoreDuringBuilds: true`, `ignoreBuildErrors: true`). Ini mempercepat pipeline tapi **sebaiknya tetap jalankan `npm run lint`/`tsc` sebelum push**.
+
+### Reset state game
+
+Jika game macet dan status room tidak kembali ke `waiting`, bersihkan sesi lama lewat SQL di Supabase:
+
+```sql
+DELETE FROM participants WHERE joined_at < NOW() - INTERVAL '24 hours';
+DELETE FROM sessions WHERE created_at < NOW() - INTERVAL '24 hours';
+```
+
+---
+
+## Checklist Deploy
+
+<Callout title="Checklist">
+1. Repo sudah push ke GitHub/GitLab.  
+2. Project sudah di-import di Vercel & production deploy sukses.  
+3. Env production (`NEXT_PUBLIC_SUPABASE_URL`, `_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`) terisi di Vercel.  
+4. OAuth redirect produksi sudah didaftarkan (Google + Supabase).  
+5. Domain kustom terhubung & HTTPS aktif.  
+6. Verify: buat room → join dari device lain → login Google jalan.
+</Callout>

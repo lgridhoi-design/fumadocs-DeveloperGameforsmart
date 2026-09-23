@@ -1,0 +1,12 @@
+{
+  "title": "Quiz",
+  "pages": [
+    "index",
+    "quiz-utils",
+    "quiz-storage",
+    "quiz-screens",
+    "quiz-load",
+    "quiz-game-view",
+    "quiz-broadcast"
+  ]
+}

@@ -1,0 +1,294 @@
+---
+title: "Quiz Settings"
+description: "Halaman pembuatan room — atur batas waktu, jumlah soal, dan mode game, lalu buat kode room baru."
+---
+
+#### app/quiz-settings/page.tsx
+
+```tsx
+"use client"
+
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { roomManager } from "@/lib/room-manager"
+import { getQuizById } from "@/lib/quiz-data"
+import { quizApi, supabase } from "@/lib/supabase"
+import { sessionManager } from "@/lib/supabase-session-manager"
+import { PageCornerLogos, pageCornerLogoContentPadding } from "@/components/layout/page-corner-logos"
+import { PageTitle } from '@/components/layout/page-title'
+import { GameBackground } from "@/components/layout/game-background"
+import { SettingsCard } from "./components/settings-card"
+import { SettingsLoadingCard } from "./components/loading-card"
+
+function QuizSettingsPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const isTryOut = searchParams.get('mode') === 'tryout'
+  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
+  const [hostId, setHostId] = useState<string | null>(null)
+  const [timeLimit, setTimeLimit] = useState("5")
+  const [questionCount, setQuestionCount] = useState("5")
+  const [availableQuestionCount, setAvailableQuestionCount] = useState<number>(0)
+  const [gameMode, setGameMode] = useState<"easy" | "medium" | "hard">("easy")
+  const [quiz, setQuiz] = useState<any>(null)
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false)
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(true)
+
+  const questionOptions = (() => {
+    const allOptions = [5, 10, 15, 20]
+    if (availableQuestionCount <= 0) return allOptions
+    return allOptions.filter(v => v <= availableQuestionCount)
+  })()
+
+  useEffect(() => {
+    if (availableQuestionCount <= 0) return
+    const parsed = Number.parseInt(questionCount, 10)
+    if (!questionOptions.includes(parsed)) {
+      setQuestionCount(String(questionOptions[questionOptions.length - 1]))
+    }
+  }, [availableQuestionCount, questionCount, questionOptions])
+
+  useEffect(() => {
+    if (gameMode === "easy") setTimeLimit("5")
+    else if (gameMode === "medium") setTimeLimit("10")
+    else setTimeLimit("15")
+  }, [gameMode])
+
+  useEffect(() => {
+    const getHostId = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) {
+          console.error("[QuizSettings] Error getting user:", authError)
+          alert("You must be logged in to create a room. Please log in first.")
+          router.push("/login")
+          return
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .single()
+
+        if (profileError || !profile) {
+          console.error("[QuizSettings] Error getting profile:", profileError)
+          alert("Profile not found. Please complete your profile first.")
+          router.push("/login")
+          return
+        }
+
+        setHostId(profile.id)
+      } catch (error) {
+        console.error("[QuizSettings] Error in getHostId:", error)
+        alert("Error getting user information. Please try again.")
+      }
+    }
+    getHostId()
+  }, [router])
+
+  const pickDefaultQuestionCount = (total: number) => {
+    const options = total > 0 ? [5, 10, 15, 20].filter(v => v <= total) : []
+    return String(options[options.length - 1] ?? 5)
+  }
+
+  useEffect(() => {
+    const quizId = localStorage.getItem("selectedQuizId")
+    if (!quizId) {
+      router.push("/select-quiz")
+      return
+    }
+
+    setSelectedQuiz(quizId)
+
+    const fetchQuizData = async () => {
+      setIsLoadingQuiz(true)
+      try {
+        const quizData = await quizApi.getQuizById(quizId)
+        if (quizData) {
+          setQuiz(quizData)
+          const total = Array.isArray(quizData?.questions) ? quizData.questions.length : 0
+          setAvailableQuestionCount(total)
+          setQuestionCount(pickDefaultQuestionCount(total))
+          setIsLoadingQuiz(false)
+          return
+        }
+      } catch (error) {
+        console.error("[QuizSettings] Error fetching quiz:", error)
+      }
+
+      const localQuizData = getQuizById(quizId)
+
+      if (localQuizData) {
+        setQuiz(localQuizData)
+        const total = Array.isArray(localQuizData?.questions) ? localQuizData.questions.length : 0
+        setAvailableQuestionCount(total)
+        setQuestionCount(pickDefaultQuestionCount(total))
+      } else {
+        console.warn("[QuizSettings] Quiz not found in both Supabase and local data for ID:", quizId)
+        const fallbackQuiz = {
+          id: quizId,
+          title: "Custom Quiz",
+          description: "A custom quiz created by the host",
+          icon: "HelpCircle",
+          color: "bg-primary/10 text-primary",
+          difficulty: "Medium" as const,
+          questions: []
+        }
+        setQuiz(fallbackQuiz)
+        setAvailableQuestionCount(0)
+        setQuestionCount("5")
+      }
+
+      setIsLoadingQuiz(false)
+    }
+
+    fetchQuizData()
+  }, [router])
+
+  const handleBackClick = async () => {
+    try {
+      const sessionId = sessionManager.getSessionIdFromStorage()
+      if (sessionId) await sessionManager.deleteSession(sessionId)
+    } catch (error) {
+      console.error("[QuizSettings] Error deleting session:", error)
+    }
+    localStorage.removeItem("selectedQuizId")
+    localStorage.removeItem("currentHost")
+    router.push("/select-quiz")
+  }
+
+  const handleSettingsComplete = async () => {
+    if (!selectedQuiz || isCreatingRoom || !hostId) {
+      if (!hostId) alert("Please wait for authentication to complete, or log in first.")
+      return
+    }
+
+    setIsCreatingRoom(true)
+
+    try {
+      const quizTitle = quiz?.title || `Quiz ${selectedQuiz}`
+
+      const parsedCount = Number.parseInt(questionCount, 10)
+      const finalQuestionCount = availableQuestionCount > 0
+        ? Math.min(Math.max(parsedCount, 1), availableQuestionCount)
+        : Math.max(parsedCount, 1)
+
+      const room = await roomManager.createRoom(hostId, {
+        questionCount: finalQuestionCount,
+        totalTimeLimit: parseInt(timeLimit),
+        gameMode: gameMode,
+      }, selectedQuiz, quizTitle)
+
+      if (!room) {
+        console.error("[QuizSettings] Failed to create room")
+        alert("Failed to create room. Please try again.")
+        setIsCreatingRoom(false)
+        return
+      }
+
+      const verifyRoom = await roomManager.getRoom(room.code)
+      if (!verifyRoom) {
+        console.error("[QuizSettings] Room verification failed")
+        alert("Room was created but verification failed. Please try again.")
+        setIsCreatingRoom(false)
+        return
+      }
+
+      try {
+        await sessionManager.createOrUpdateSession(null, 'host', {
+          id: hostId,
+          roomCode: room.code,
+          quizId: selectedQuiz,
+        }, room.code)
+      } catch (error) {
+        console.error("[QuizSettings] Error creating host session:", error)
+      }
+
+      localStorage.setItem("currentHost", JSON.stringify({
+        hostId,
+        roomCode: room.code,
+        quizId: selectedQuiz,
+      }))
+
+      localStorage.setItem(`game-${room.code}`, JSON.stringify({
+        quizId: selectedQuiz,
+        settings: {
+          questionCount: parseInt(questionCount),
+          totalTimeLimit: parseInt(timeLimit),
+          gameMode: gameMode,
+        },
+      }))
+
+      if (isTryOut) {
+        localStorage.setItem(`gameMode-${room.code}`, 'tryout')
+      }
+
+      setTimeout(() => {
+        if (isTryOut) {
+          router.push(`/player/${room.code}/game/countdown?mode=tryout`)
+        } else {
+          router.push(`/lobby?roomCode=${room.code}`)
+        }
+      }, 100)
+
+    } catch (error) {
+      console.error("[QuizSettings] Error creating room:", error)
+      alert("An error occurred while creating the room. Please try again.")
+      setIsCreatingRoom(false)
+    }
+  }
+
+  if (!selectedQuiz) {
+    return (
+      <GameBackground>
+        <div className="min-h-screen flex items-center justify-center">
+          <SettingsLoadingCard />
+        </div>
+      </GameBackground>
+    )
+  }
+
+  return (
+    <GameBackground>
+      <PageCornerLogos onLogoClick={handleBackClick} />
+
+      <div className={`relative z-10 container mx-auto px-4 py-4 sm:py-1 ${pageCornerLogoContentPadding}`}>
+        <div className="max-w-md mx-auto">
+          <SettingsCard
+            isLoadingQuiz={isLoadingQuiz}
+            quizTitle={quiz?.title}
+            timeLimit={timeLimit}
+            onTimeLimitChange={setTimeLimit}
+            questionCount={questionCount}
+            questionOptions={questionOptions}
+            onQuestionCountChange={setQuestionCount}
+            gameMode={gameMode}
+            onGameModeChange={setGameMode}
+            isTryOut={isTryOut}
+            isCreatingRoom={isCreatingRoom}
+            onCreateRoom={handleSettingsComplete}
+          />
+        </div>
+      </div>
+    </GameBackground>
+  )
+}
+
+export default function QuizSettingsPage() {
+  return (
+    <>
+      <PageTitle title={`Settings`} />
+      <Suspense fallback={
+        <GameBackground>
+          <div className="min-h-screen flex items-center justify-center">
+            <SettingsLoadingCard />
+          </div>
+        </GameBackground>
+      }>
+        <QuizSettingsPageContent />
+      </Suspense>
+    </>
+  )
+}
+```
