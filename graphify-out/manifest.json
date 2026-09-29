@@ -1,0 +1,622 @@
+{
+  "app/(home)/layout.tsx": {
+    "mtime": 1790176952.7051277,
+    "ast_hash": "4c3f7081580eff03e035805e2ff2a2ba",
+    "semantic_hash": "4c3f7081580eff03e035805e2ff2a2ba"
+  },
+  "app/(home)/page.tsx": {
+    "mtime": 1790177988.8782878,
+    "ast_hash": "605b831ef1cac701e181d15481b86346",
+    "semantic_hash": "605b831ef1cac701e181d15481b86346"
+  },
+  "app/api/search/route.ts": {
+    "mtime": 1790178006.933645,
+    "ast_hash": "4ea78dcef9eac1784228ab9576d4f135",
+    "semantic_hash": "4ea78dcef9eac1784228ab9576d4f135"
+  },
+  "app/docs/[[...slug]]/page.tsx": {
+    "mtime": 1790176952.716379,
+    "ast_hash": "8ad1b8083d9550125d9701cb7d4052db",
+    "semantic_hash": "8ad1b8083d9550125d9701cb7d4052db"
+  },
+  "app/docs/layout.tsx": {
+    "mtime": 1790176952.720378,
+    "ast_hash": "6e7b4dc5cef4e5e1fd1089192ae30e82",
+    "semantic_hash": "6e7b4dc5cef4e5e1fd1089192ae30e82"
+  },
+  "app/layout.tsx": {
+    "mtime": 1790178006.2697573,
+    "ast_hash": "8444073cd7dccdbd702e21ddbc0e3c4e",
+    "semantic_hash": "8444073cd7dccdbd702e21ddbc0e3c4e"
+  },
+  "app/llms-full.txt/route.ts": {
+    "mtime": 1790176952.7289107,
+    "ast_hash": "10d5f7e6b4281c2e6302965363473731",
+    "semantic_hash": "10d5f7e6b4281c2e6302965363473731"
+  },
+  "app/llms.mdx/docs/[[...slug]]/route.ts": {
+    "mtime": 1790176952.7363734,
+    "ast_hash": "951550260a3d2e1c235f48c5621f2636",
+    "semantic_hash": "951550260a3d2e1c235f48c5621f2636"
+  },
+  "app/llms.txt/route.ts": {
+    "mtime": 1790176952.7399106,
+    "ast_hash": "4165bd336f5078d09b4bb8c8f012ec68",
+    "semantic_hash": "4165bd336f5078d09b4bb8c8f012ec68"
+  },
+  "app/og/docs/[...slug]/route.tsx": {
+    "mtime": 1790176952.747418,
+    "ast_hash": "d73ebbff2fab3a96f42afb306a13486d",
+    "semantic_hash": "d73ebbff2fab3a96f42afb306a13486d"
+  },
+  "components/mdx.tsx": {
+    "mtime": 1790176952.7499478,
+    "ast_hash": "d6d3030466c33778e4bf900b36affaae",
+    "semantic_hash": "d6d3030466c33778e4bf900b36affaae"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/meta.json": {
+    "mtime": 1790177948.5458877,
+    "ast_hash": "b36fc552f3c4f0a062e5a47a0919e594",
+    "semantic_hash": "b36fc552f3c4f0a062e5a47a0919e594"
+  },
+  "content/docs/memory-game/frontend/host/lobby/meta.json": {
+    "mtime": 1790177948.5478883,
+    "ast_hash": "18498bf47c82b001126b44338d31ccc9",
+    "semantic_hash": "18498bf47c82b001126b44338d31ccc9"
+  },
+  "content/docs/memory-game/frontend/host/meta.json": {
+    "mtime": 1790177948.549961,
+    "ast_hash": "b76089aacc28d53c3dbca93b44e0cc60",
+    "semantic_hash": "b76089aacc28d53c3dbca93b44e0cc60"
+  },
+  "content/docs/memory-game/frontend/host/monitor/meta.json": {
+    "mtime": 1790177948.551958,
+    "ast_hash": "967b6896bd39d249eec44dadbc956f77",
+    "semantic_hash": "967b6896bd39d249eec44dadbc956f77"
+  },
+  "content/docs/memory-game/frontend/join/meta.json": {
+    "mtime": 1790177948.5539515,
+    "ast_hash": "999ff34788dac1f672cb50081bfaf40a",
+    "semantic_hash": "999ff34788dac1f672cb50081bfaf40a"
+  },
+  "content/docs/memory-game/frontend/meta.json": {
+    "mtime": 1790177948.5559566,
+    "ast_hash": "4afa2fcb20de22d935e6a43207e57445",
+    "semantic_hash": "4afa2fcb20de22d935e6a43207e57445"
+  },
+  "content/docs/memory-game/frontend/player/countdown/meta.json": {
+    "mtime": 1790177948.5579512,
+    "ast_hash": "c5464229b0eb5262914f9fb4189f994a",
+    "semantic_hash": "c5464229b0eb5262914f9fb4189f994a"
+  },
+  "content/docs/memory-game/frontend/player/memory-challenge/meta.json": {
+    "mtime": 1790177948.5604525,
+    "ast_hash": "1c7e81e4d37ddfea2c314db46f253b21",
+    "semantic_hash": "1c7e81e4d37ddfea2c314db46f253b21"
+  },
+  "content/docs/memory-game/frontend/player/meta.json": {
+    "mtime": 1790177948.562452,
+    "ast_hash": "bcfc61f8bb9f55100d243eac4b86e625",
+    "semantic_hash": "bcfc61f8bb9f55100d243eac4b86e625"
+  },
+  "content/docs/memory-game/frontend/player/quiz/meta.json": {
+    "mtime": 1790177948.5651877,
+    "ast_hash": "fd9826dea5769249c27bd675a089a4c3",
+    "semantic_hash": "fd9826dea5769249c27bd675a089a4c3"
+  },
+  "content/docs/memory-game/frontend/player/result/meta.json": {
+    "mtime": 1790177948.5671933,
+    "ast_hash": "780ee5d37a8ed031c0d37fc4d9e265e2",
+    "semantic_hash": "780ee5d37a8ed031c0d37fc4d9e265e2"
+  },
+  "content/docs/memory-game/frontend/player/waiting/meta.json": {
+    "mtime": 1790177948.5703635,
+    "ast_hash": "0e1782689a1b0caa12053066b813a95c",
+    "semantic_hash": "0e1782689a1b0caa12053066b813a95c"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/meta.json": {
+    "mtime": 1790177948.5723648,
+    "ast_hash": "4cb7d4ae52a3705f63349fad14026fe5",
+    "semantic_hash": "4cb7d4ae52a3705f63349fad14026fe5"
+  },
+  "content/docs/memory-game/frontend/select-quiz/meta.json": {
+    "mtime": 1790177948.5753682,
+    "ast_hash": "dcc517eebeda9edd37dddba3977e6ef8",
+    "semantic_hash": "dcc517eebeda9edd37dddba3977e6ef8"
+  },
+  "content/docs/memory-game/meta.json": {
+    "mtime": 1790177964.3200994,
+    "ast_hash": "9f952152b8d6abe1c4ab43b430c64c67",
+    "semantic_hash": "9f952152b8d6abe1c4ab43b430c64c67"
+  },
+  "content/docs/memory-game/setup/meta.json": {
+    "mtime": 1790177948.5818958,
+    "ast_hash": "6549a91f541c19bdeea5f8c2e981a24e",
+    "semantic_hash": "6549a91f541c19bdeea5f8c2e981a24e"
+  },
+  "content/docs/meta.json": {
+    "mtime": 1790177963.9386556,
+    "ast_hash": "2273714d3a1c6a094bffe4a67307c3f4",
+    "semantic_hash": "2273714d3a1c6a094bffe4a67307c3f4"
+  },
+  "lib/cn.ts": {
+    "mtime": 1790176952.7647705,
+    "ast_hash": "13087d1e008a19bddfde036ecca3d316",
+    "semantic_hash": "13087d1e008a19bddfde036ecca3d316"
+  },
+  "lib/layout.shared.tsx": {
+    "mtime": 1790176952.7667665,
+    "ast_hash": "f4af0e2f4b3b6ba2758dec0e2d37505d",
+    "semantic_hash": "f4af0e2f4b3b6ba2758dec0e2d37505d"
+  },
+  "lib/shared.ts": {
+    "mtime": 1790178010.736347,
+    "ast_hash": "75d386246d9836a95a5ec4362abaed6d",
+    "semantic_hash": "75d386246d9836a95a5ec4362abaed6d"
+  },
+  "lib/source.ts": {
+    "mtime": 1790176952.7708633,
+    "ast_hash": "df35a62138ae7289c93224db6c689159",
+    "semantic_hash": "df35a62138ae7289c93224db6c689159"
+  },
+  "next.config.mjs": {
+    "mtime": 1790176952.7728627,
+    "ast_hash": "1c76224d20b738b16b6941325be8fa07",
+    "semantic_hash": "1c76224d20b738b16b6941325be8fa07"
+  },
+  "package.json": {
+    "mtime": 1790178141.521386,
+    "ast_hash": "5c6cf1c1bdb81839807fd71581c43128",
+    "semantic_hash": "5c6cf1c1bdb81839807fd71581c43128"
+  },
+  "postcss.config.mjs": {
+    "mtime": 1790176952.7773767,
+    "ast_hash": "e9d66e1263ec6f84f9c7f4b88b00e4f9",
+    "semantic_hash": "e9d66e1263ec6f84f9c7f4b88b00e4f9"
+  },
+  "proxy.ts": {
+    "mtime": 1790176952.78039,
+    "ast_hash": "78c73de205b9fca8da4f0a069354e068",
+    "semantic_hash": "78c73de205b9fca8da4f0a069354e068"
+  },
+  "tsconfig.json": {
+    "mtime": 1790176952.7823892,
+    "ast_hash": "4d2b38410d5627121eaa87c46c1a849d",
+    "semantic_hash": "4d2b38410d5627121eaa87c46c1a849d"
+  },
+  "README.md": {
+    "mtime": 1790176973.929779,
+    "ast_hash": "be7e0c6f2daae87cbab77a78a5035a72",
+    "semantic_hash": "be7e0c6f2daae87cbab77a78a5035a72"
+  },
+  "content/docs/index.mdx": {
+    "mtime": 1790178020.5085692,
+    "ast_hash": "6c2bf4f1abb92779e72cd6411e628c8e",
+    "semantic_hash": "6c2bf4f1abb92779e72cd6411e628c8e"
+  },
+  "content/docs/memory-game/backend.mdx": {
+    "mtime": 1790177970.7794816,
+    "ast_hash": "40939ecf81db5508d9faf2c5cbb8570d",
+    "semantic_hash": "40939ecf81db5508d9faf2c5cbb8570d"
+  },
+  "content/docs/memory-game/database.mdx": {
+    "mtime": 1790177970.7814913,
+    "ast_hash": "ccdc6c78b2bbcb31622731df73dccf1c",
+    "semantic_hash": "ccdc6c78b2bbcb31622731df73dccf1c"
+  },
+  "content/docs/memory-game/deploy.mdx": {
+    "mtime": 1790177970.783494,
+    "ast_hash": "c9f65ec18159196962273aeecea4ec0f",
+    "semantic_hash": "c9f65ec18159196962273aeecea4ec0f"
+  },
+  "content/docs/memory-game/frontend/home.mdx": {
+    "mtime": 1790177970.7854798,
+    "ast_hash": "c901994c650a2036e162c2464cad5fb4",
+    "semantic_hash": "c901994c650a2036e162c2464cad5fb4"
+  },
+  "content/docs/memory-game/frontend/host/index.mdx": {
+    "mtime": 1790177970.7874925,
+    "ast_hash": "4fcad772ba6b8af4ca25e1ecd13812c3",
+    "semantic_hash": "4fcad772ba6b8af4ca25e1ecd13812c3"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/desktop-leaderboard.mdx": {
+    "mtime": 1790177970.789911,
+    "ast_hash": "a334050f413f3302f39b474e28ac56a9",
+    "semantic_hash": "a334050f413f3302f39b474e28ac56a9"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/floating-action-buttons.mdx": {
+    "mtime": 1790177970.7919085,
+    "ast_hash": "0235dd883d3b0cccaa87b532bad38768",
+    "semantic_hash": "0235dd883d3b0cccaa87b532bad38768"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/index.mdx": {
+    "mtime": 1790177970.7939067,
+    "ast_hash": "1902b20fa46cd3d4fbebc377944213f4",
+    "semantic_hash": "1902b20fa46cd3d4fbebc377944213f4"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/leaderboard-screens.mdx": {
+    "mtime": 1790177970.7959108,
+    "ast_hash": "701c05b38aa6f026b7db775c75d9cfe7",
+    "semantic_hash": "701c05b38aa6f026b7db775c75d9cfe7"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/mobile-leaderboard.mdx": {
+    "mtime": 1790177970.7979066,
+    "ast_hash": "47b480585a1fc7f6a873c9c97bdb57a3",
+    "semantic_hash": "47b480585a1fc7f6a873c9c97bdb57a3"
+  },
+  "content/docs/memory-game/frontend/host/leaderboard/types.mdx": {
+    "mtime": 1790177970.8004293,
+    "ast_hash": "559d299e43bbcf2632d735554417016c",
+    "semantic_hash": "559d299e43bbcf2632d735554417016c"
+  },
+  "content/docs/memory-game/frontend/host/lobby/index.mdx": {
+    "mtime": 1790177970.8024216,
+    "ast_hash": "949809e36c63e992fa9249a598886c0b",
+    "semantic_hash": "949809e36c63e992fa9249a598886c0b"
+  },
+  "content/docs/memory-game/frontend/host/lobby/lobby-dialogs.mdx": {
+    "mtime": 1790177970.8054209,
+    "ast_hash": "7c0bcada3f741f3fdf318c7a83ac435a",
+    "semantic_hash": "7c0bcada3f741f3fdf318c7a83ac435a"
+  },
+  "content/docs/memory-game/frontend/host/lobby/lobby-screens.mdx": {
+    "mtime": 1790177970.8074336,
+    "ast_hash": "a669d19bf8f02368b1c454df87c898b3",
+    "semantic_hash": "a669d19bf8f02368b1c454df87c898b3"
+  },
+  "content/docs/memory-game/frontend/host/lobby/player-list-card.mdx": {
+    "mtime": 1790177970.809951,
+    "ast_hash": "e2c23eaf9eef896b8a6c09e2a0e01f43",
+    "semantic_hash": "e2c23eaf9eef896b8a6c09e2a0e01f43"
+  },
+  "content/docs/memory-game/frontend/host/lobby/room-share-card.mdx": {
+    "mtime": 1790177970.8119786,
+    "ast_hash": "6552ddf4a860f9ec3c52ea76bd7ea5ad",
+    "semantic_hash": "6552ddf4a860f9ec3c52ea76bd7ea5ad"
+  },
+  "content/docs/memory-game/frontend/host/monitor/end-game-dialog.mdx": {
+    "mtime": 1790177970.8139758,
+    "ast_hash": "df1291429a8a0fb12b7e1e4de5081859",
+    "semantic_hash": "df1291429a8a0fb12b7e1e4de5081859"
+  },
+  "content/docs/memory-game/frontend/host/monitor/index.mdx": {
+    "mtime": 1790177970.816519,
+    "ast_hash": "27824e97e777514a81c7f732d667a91d",
+    "semantic_hash": "27824e97e777514a81c7f732d667a91d"
+  },
+  "content/docs/memory-game/frontend/host/monitor/monitor-header.mdx": {
+    "mtime": 1790177970.8195102,
+    "ast_hash": "9c9ad86cb409ecaa68d60107d5b96224",
+    "semantic_hash": "9c9ad86cb409ecaa68d60107d5b96224"
+  },
+  "content/docs/memory-game/frontend/host/monitor/monitor-loading-screen.mdx": {
+    "mtime": 1790177970.8220294,
+    "ast_hash": "4ecca11e2b804f0ab4cc88b1e05eecc1",
+    "semantic_hash": "4ecca11e2b804f0ab4cc88b1e05eecc1"
+  },
+  "content/docs/memory-game/frontend/host/monitor/player-progress-grid.mdx": {
+    "mtime": 1790177970.8250382,
+    "ast_hash": "bcb50e58c741544d3fe89672f99092fc",
+    "semantic_hash": "bcb50e58c741544d3fe89672f99092fc"
+  },
+  "content/docs/memory-game/frontend/host/monitor/time-warning.mdx": {
+    "mtime": 1790177970.82705,
+    "ast_hash": "e8764e84b8a83c7b739a8ec1f94210b4",
+    "semantic_hash": "e8764e84b8a83c7b739a8ec1f94210b4"
+  },
+  "content/docs/memory-game/frontend/index.mdx": {
+    "mtime": 1790177970.8300433,
+    "ast_hash": "67d3614e76bc06ff16ec661e0a957e73",
+    "semantic_hash": "67d3614e76bc06ff16ec661e0a957e73"
+  },
+  "content/docs/memory-game/frontend/join/access-denied-modal.mdx": {
+    "mtime": 1790177970.8325713,
+    "ast_hash": "0f882b72dd313a7d4e70ed5bff7bf495",
+    "semantic_hash": "0f882b72dd313a7d4e70ed5bff7bf495"
+  },
+  "content/docs/memory-game/frontend/join/index.mdx": {
+    "mtime": 1790177970.836572,
+    "ast_hash": "f262fd7beb1798104a7e590fbd92a410",
+    "semantic_hash": "f262fd7beb1798104a7e590fbd92a410"
+  },
+  "content/docs/memory-game/frontend/join/join-card.mdx": {
+    "mtime": 1790177970.8385756,
+    "ast_hash": "fe878abb67e380993ad7c2a2840a2cea",
+    "semantic_hash": "fe878abb67e380993ad7c2a2840a2cea"
+  },
+  "content/docs/memory-game/frontend/join/join-loading-screen.mdx": {
+    "mtime": 1790177970.8405802,
+    "ast_hash": "8c36c8d69101955249f3c9e97b4f4799",
+    "semantic_hash": "8c36c8d69101955249f3c9e97b4f4799"
+  },
+  "content/docs/memory-game/frontend/join/room-code.mdx": {
+    "mtime": 1790177970.8431177,
+    "ast_hash": "f56ffa6fbf8d459bfc86086f579a54cd",
+    "semantic_hash": "f56ffa6fbf8d459bfc86086f579a54cd"
+  },
+  "content/docs/memory-game/frontend/player/countdown/index.mdx": {
+    "mtime": 1790177970.8451395,
+    "ast_hash": "564d96d2c2147f73e40fe85fa3eebb7d",
+    "semantic_hash": "564d96d2c2147f73e40fe85fa3eebb7d"
+  },
+  "content/docs/memory-game/frontend/player/index.mdx": {
+    "mtime": 1790177970.8471358,
+    "ast_hash": "52d2691dc4954d680e2fdaad18a89696",
+    "semantic_hash": "52d2691dc4954d680e2fdaad18a89696"
+  },
+  "content/docs/memory-game/frontend/player/memory-challenge/index.mdx": {
+    "mtime": 1790179117.7100177,
+    "ast_hash": "ffdb63e1a567b85fd1074f97ffd592dd",
+    "semantic_hash": "ffdb63e1a567b85fd1074f97ffd592dd"
+  },
+  "content/docs/memory-game/frontend/player/memory-challenge/memory-completed-screen.mdx": {
+    "mtime": 1790177970.8536747,
+    "ast_hash": "1723ef5b79cf25f1039bacbe5be265d6",
+    "semantic_hash": "1723ef5b79cf25f1039bacbe5be265d6"
+  },
+  "content/docs/memory-game/frontend/player/memory-challenge/memory-game-shell.mdx": {
+    "mtime": 1790177970.8556795,
+    "ast_hash": "6fa095661b56fb2e165f188f0bd95629",
+    "semantic_hash": "6fa095661b56fb2e165f188f0bd95629"
+  },
+  "content/docs/memory-game/frontend/player/quiz/index.mdx": {
+    "mtime": 1790177970.858677,
+    "ast_hash": "fc278aa1ad3b254f18c0a2e2ac310e77",
+    "semantic_hash": "fc278aa1ad3b254f18c0a2e2ac310e77"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-broadcast.mdx": {
+    "mtime": 1790177970.8606782,
+    "ast_hash": "d2f2cb770b3a3bba8e0179242cb9c28f",
+    "semantic_hash": "d2f2cb770b3a3bba8e0179242cb9c28f"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-game-view.mdx": {
+    "mtime": 1790177970.8631885,
+    "ast_hash": "2cb3664de098b5e7831579b8b33a7c5a",
+    "semantic_hash": "2cb3664de098b5e7831579b8b33a7c5a"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-load.mdx": {
+    "mtime": 1790177970.8659487,
+    "ast_hash": "3cf3a26d8cf8d2e82b8d5ebc0a7f2823",
+    "semantic_hash": "3cf3a26d8cf8d2e82b8d5ebc0a7f2823"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-screens.mdx": {
+    "mtime": 1790177970.8694723,
+    "ast_hash": "559e6b8fc67c7eca8780b720f7cd220a",
+    "semantic_hash": "559e6b8fc67c7eca8780b720f7cd220a"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-storage.mdx": {
+    "mtime": 1790177970.872477,
+    "ast_hash": "c09126c6a3950edc6eb7fb6f11137c72",
+    "semantic_hash": "c09126c6a3950edc6eb7fb6f11137c72"
+  },
+  "content/docs/memory-game/frontend/player/quiz/quiz-utils.mdx": {
+    "mtime": 1790177970.875458,
+    "ast_hash": "72c4210670bb2fdfbffb2c7909dd796b",
+    "semantic_hash": "72c4210670bb2fdfbffb2c7909dd796b"
+  },
+  "content/docs/memory-game/frontend/player/result/floating-action-buttons.mdx": {
+    "mtime": 1790177970.8775122,
+    "ast_hash": "f4ec76688a7d9ad7923f9ba8c0dd7a27",
+    "semantic_hash": "f4ec76688a7d9ad7923f9ba8c0dd7a27"
+  },
+  "content/docs/memory-game/frontend/player/result/index.mdx": {
+    "mtime": 1790177970.8805265,
+    "ast_hash": "9cfdf2a7793fc2fce28385a1f13784fb",
+    "semantic_hash": "9cfdf2a7793fc2fce28385a1f13784fb"
+  },
+  "content/docs/memory-game/frontend/player/result/player-result-card.mdx": {
+    "mtime": 1790177970.882534,
+    "ast_hash": "145efb74724b71b69c255468b605a41a",
+    "semantic_hash": "145efb74724b71b69c255468b605a41a"
+  },
+  "content/docs/memory-game/frontend/player/result/player-result-logic.mdx": {
+    "mtime": 1790177970.8856246,
+    "ast_hash": "a58ba42a7d93bb85a5b7cf85a4e2c927",
+    "semantic_hash": "a58ba42a7d93bb85a5b7cf85a4e2c927"
+  },
+  "content/docs/memory-game/frontend/player/result/result-background.mdx": {
+    "mtime": 1790177970.8886297,
+    "ast_hash": "31d3cc9fafff0f9d7e5889bbd3ad4a07",
+    "semantic_hash": "31d3cc9fafff0f9d7e5889bbd3ad4a07"
+  },
+  "content/docs/memory-game/frontend/player/result/result-screens.mdx": {
+    "mtime": 1790177970.8906393,
+    "ast_hash": "b8bfa1fe0e10140b2ff51f556076a1ef",
+    "semantic_hash": "b8bfa1fe0e10140b2ff51f556076a1ef"
+  },
+  "content/docs/memory-game/frontend/player/result/result-stats-grid.mdx": {
+    "mtime": 1790177970.8936284,
+    "ast_hash": "0132d4c3377634c734642f76346871cb",
+    "semantic_hash": "0132d4c3377634c734642f76346871cb"
+  },
+  "content/docs/memory-game/frontend/player/result/types.mdx": {
+    "mtime": 1790177970.897148,
+    "ast_hash": "b3a481e4435b9e8f014ca3982b0166c2",
+    "semantic_hash": "b3a481e4435b9e8f014ca3982b0166c2"
+  },
+  "content/docs/memory-game/frontend/player/result/use-result-data.mdx": {
+    "mtime": 1790177970.8996682,
+    "ast_hash": "e99feb4866d3db82ec13d143dc99e5b6",
+    "semantic_hash": "e99feb4866d3db82ec13d143dc99e5b6"
+  },
+  "content/docs/memory-game/frontend/player/waiting/exit-dialog.mdx": {
+    "mtime": 1790177970.9016669,
+    "ast_hash": "825a9163f0965c57ffe430495d1e1a58",
+    "semantic_hash": "825a9163f0965c57ffe430495d1e1a58"
+  },
+  "content/docs/memory-game/frontend/player/waiting/game-starting-screen.mdx": {
+    "mtime": 1790177970.9036665,
+    "ast_hash": "74a3dc4eb0c6df830a637c7f25b8d96d",
+    "semantic_hash": "74a3dc4eb0c6df830a637c7f25b8d96d"
+  },
+  "content/docs/memory-game/frontend/player/waiting/index.mdx": {
+    "mtime": 1790177970.9046662,
+    "ast_hash": "ee49818a58eb276afb622a4d01456ff8",
+    "semantic_hash": "ee49818a58eb276afb622a4d01456ff8"
+  },
+  "content/docs/memory-game/frontend/player/waiting/types.mdx": {
+    "mtime": 1790177970.9071927,
+    "ast_hash": "4c6e8a9fb44b4d8f1470ce9094f099d0",
+    "semantic_hash": "4c6e8a9fb44b4d8f1470ce9094f099d0"
+  },
+  "content/docs/memory-game/frontend/player/waiting/waiting-card.mdx": {
+    "mtime": 1790177970.909192,
+    "ast_hash": "37d7768bca3f9813ce04ef3c3aab30e9",
+    "semantic_hash": "37d7768bca3f9813ce04ef3c3aab30e9"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/game-mode-buttons.mdx": {
+    "mtime": 1790177970.9121826,
+    "ast_hash": "78a0e385afebf0d2d50bd6f789e39166",
+    "semantic_hash": "78a0e385afebf0d2d50bd6f789e39166"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/index.mdx": {
+    "mtime": 1790177970.9141865,
+    "ast_hash": "690d5c2f6e90442f10a418f2ea4ba757",
+    "semantic_hash": "690d5c2f6e90442f10a418f2ea4ba757"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/loading-card.mdx": {
+    "mtime": 1790177970.9178126,
+    "ast_hash": "e640927693b85c3390980c1961e26402",
+    "semantic_hash": "e640927693b85c3390980c1961e26402"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/question-count-select.mdx": {
+    "mtime": 1790177970.9198089,
+    "ast_hash": "ee75f7be60db09923c032ea9630632fd",
+    "semantic_hash": "ee75f7be60db09923c032ea9630632fd"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/settings-card.mdx": {
+    "mtime": 1790177970.9218125,
+    "ast_hash": "a34542cfa2c95ae33590cd5a71e7cd62",
+    "semantic_hash": "a34542cfa2c95ae33590cd5a71e7cd62"
+  },
+  "content/docs/memory-game/frontend/quiz-settings/time-limit-select.mdx": {
+    "mtime": 1790177970.9238162,
+    "ast_hash": "0c95960918657c1f8a45543a1baf7c87",
+    "semantic_hash": "0c95960918657c1f8a45543a1baf7c87"
+  },
+  "content/docs/memory-game/frontend/select-quiz/categories.mdx": {
+    "mtime": 1790177970.9258068,
+    "ast_hash": "a240be0e452db0fa5c3be93addfb875e",
+    "semantic_hash": "a240be0e452db0fa5c3be93addfb875e"
+  },
+  "content/docs/memory-game/frontend/select-quiz/empty-state.mdx": {
+    "mtime": 1790177970.9293356,
+    "ast_hash": "75e7a57b72a11b978134111c3355c436",
+    "semantic_hash": "75e7a57b72a11b978134111c3355c436"
+  },
+  "content/docs/memory-game/frontend/select-quiz/index.mdx": {
+    "mtime": 1790177970.9323483,
+    "ast_hash": "4183cee7fb425662ea65c1714a2a90f7",
+    "semantic_hash": "4183cee7fb425662ea65c1714a2a90f7"
+  },
+  "content/docs/memory-game/frontend/select-quiz/pagination.mdx": {
+    "mtime": 1790177970.9343479,
+    "ast_hash": "1daeb9fad02a108d029c32054348f3fd",
+    "semantic_hash": "1daeb9fad02a108d029c32054348f3fd"
+  },
+  "content/docs/memory-game/frontend/select-quiz/quiz-card.mdx": {
+    "mtime": 1790177970.936349,
+    "ast_hash": "e81022da6c273eefad6558b5347a8b72",
+    "semantic_hash": "e81022da6c273eefad6558b5347a8b72"
+  },
+  "content/docs/memory-game/frontend/select-quiz/quiz-detail-dialog.mdx": {
+    "mtime": 1790177970.938878,
+    "ast_hash": "0a5cdc4125707443475500729c95b919",
+    "semantic_hash": "0a5cdc4125707443475500729c95b919"
+  },
+  "content/docs/memory-game/frontend/select-quiz/quiz-filter-bar.mdx": {
+    "mtime": 1790177970.9408731,
+    "ast_hash": "839d2ccb6d640ac1b16402c6098d86ff",
+    "semantic_hash": "839d2ccb6d640ac1b16402c6098d86ff"
+  },
+  "content/docs/memory-game/frontend/select-quiz/select-quiz-content.mdx": {
+    "mtime": 1790177970.9428754,
+    "ast_hash": "ec34726853753f447a656863cd531507",
+    "semantic_hash": "ec34726853753f447a656863cd531507"
+  },
+  "content/docs/memory-game/index.mdx": {
+    "mtime": 1790179108.9265196,
+    "ast_hash": "a06a411e63fa69c44ce55c6b5f1a126a",
+    "semantic_hash": "a06a411e63fa69c44ce55c6b5f1a126a"
+  },
+  "content/docs/memory-game/login.mdx": {
+    "mtime": 1790177970.9468694,
+    "ast_hash": "5f5ff39426670129360f036e0a294c27",
+    "semantic_hash": "5f5ff39426670129360f036e0a294c27"
+  },
+  "content/docs/memory-game/setup/index.mdx": {
+    "mtime": 1790177970.9488707,
+    "ast_hash": "80e925a7a4cf4a2921d634eb71747fc5",
+    "semantic_hash": "80e925a7a4cf4a2921d634eb71747fc5"
+  },
+  "content/docs/memory-game/setup/nextjs.mdx": {
+    "mtime": 1790177970.9513366,
+    "ast_hash": "5d7e31938cf422db7cff42cd40e5c296",
+    "semantic_hash": "5d7e31938cf422db7cff42cd40e5c296"
+  },
+  "content/docs/memory-game/setup/struktur-folder.mdx": {
+    "mtime": 1790177970.9543383,
+    "ast_hash": "93cd90d967f7b0e23f1e2b5b765fd200",
+    "semantic_hash": "93cd90d967f7b0e23f1e2b5b765fd200"
+  },
+  "content/docs/memory-game/setup/supabase.mdx": {
+    "mtime": 1790177970.9563363,
+    "ast_hash": "7693bc1604a4f82c3e2fc83ffb853c8c",
+    "semantic_hash": "7693bc1604a4f82c3e2fc83ffb853c8c"
+  },
+  "content/docs/memory-game/setup/tailwind.mdx": {
+    "mtime": 1790177970.9583414,
+    "ast_hash": "757e28151c63ca6205385e9d9d49c254",
+    "semantic_hash": "757e28151c63ca6205385e9d9d49c254"
+  },
+  "public/memogame/cat.webp": {
+    "mtime": 1790179060.424715,
+    "ast_hash": "6ea8202dbcaec33de42c026d699b1412",
+    "semantic_hash": "6ea8202dbcaec33de42c026d699b1412"
+  },
+  "public/memogame/cow.webp": {
+    "mtime": 1790179060.429332,
+    "ast_hash": "7838dfb004082b7121542441bd0946ac",
+    "semantic_hash": "7838dfb004082b7121542441bd0946ac"
+  },
+  "public/memogame/crab.webp": {
+    "mtime": 1790179060.4326775,
+    "ast_hash": "60b90c02d25722c4d21962c185f313c9",
+    "semantic_hash": "60b90c02d25722c4d21962c185f313c9"
+  },
+  "public/memogame/fox.webp": {
+    "mtime": 1790179060.4360454,
+    "ast_hash": "e63f9686f22c53e4b62f3e6c904140b2",
+    "semantic_hash": "e63f9686f22c53e4b62f3e6c904140b2"
+  },
+  "public/memogame/jellyfish.webp": {
+    "mtime": 1790179060.4392538,
+    "ast_hash": "0e3b2002152f95ad388f973dfe39d85e",
+    "semantic_hash": "0e3b2002152f95ad388f973dfe39d85e"
+  },
+  "public/memogame/koala.webp": {
+    "mtime": 1790179060.4426043,
+    "ast_hash": "815b85b3d539ea85e157b7056ef26285",
+    "semantic_hash": "815b85b3d539ea85e157b7056ef26285"
+  },
+  "public/memogame/parrot.webp": {
+    "mtime": 1790179060.4458346,
+    "ast_hash": "96f0037d5297c9d902cbc5d5632391bc",
+    "semantic_hash": "96f0037d5297c9d902cbc5d5632391bc"
+  },
+  "public/memogame/penguin.webp": {
+    "mtime": 1790179060.4491377,
+    "ast_hash": "efc616d8d25b2b6c36f32aa955cb5978",
+    "semantic_hash": "efc616d8d25b2b6c36f32aa955cb5978"
+  },
+  "public/memogame/sea-turtle.webp": {
+    "mtime": 1790179060.45267,
+    "ast_hash": "fb252fdd2d8fb4f56e93fc9db2052418",
+    "semantic_hash": "fb252fdd2d8fb4f56e93fc9db2052418"
+  },
+  "public/memogame/whale.webp": {
+    "mtime": 1790179060.4560394,
+    "ast_hash": "0f5b377ce8d4cbd6167d296c267cccbc",
+    "semantic_hash": "0f5b377ce8d4cbd6167d296c267cccbc"
+  }
+}

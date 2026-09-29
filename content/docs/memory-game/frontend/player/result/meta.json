@@ -1,13 +1,14 @@
 {
-  "title": "Player Result",
+  "title": "Result",
+  "icon": "Trophy",
   "pages": [
     "index",
     "types",
-    "use-result-data",
-    "player-result-logic",
-    "player-result-card",
-    "result-stats-grid",
     "result-screens",
+    "player-result-card",
+    "player-result-logic",
+    "use-result-data",
+    "result-stats-grid",
     "result-background",
     "floating-action-buttons"
   ]

@@ -1,5 +1,6 @@
 {
   "title": "Select Quiz",
+  "icon": "ListChecks",
   "pages": [
     "index",
     "select-quiz-content",

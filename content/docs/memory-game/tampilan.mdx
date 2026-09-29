@@ -1,0 +1,285 @@
+---
+title: Tampilan Memory-Game
+icon: GalleryVertical
+description: Galeri 15 tampilan aplikasi Memory Game beserta penjelasan singkat cara memakainya — dari login, beranda, pilih kuis, lobby, gameplay, hingga hasil.
+---
+
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Tampilan Memory-Game
+
+Galeri **15 tampilan** aplikasi Memory Game. Setiap tampilan dijelaskan secara singkat: halaman ini untuk apa dan cara memakainya.
+
+<Callout type="info">
+  Bab ini **tidak membahas kode**. Kalau yang kamu cari cara membangun tiap halaman,
+  buka bab [Frontend](/docs/memory-game/frontend).
+</Callout>
+
+---
+
+## Sebelum Mulai: Host dan Player
+
+- **Host** — yang membuat dan mengatur permainan: memilih kuis, membuka room, memulai, memantau, dan mengakhirinya.
+- **Player** — yang bergabung dan bermain, cukup memasukkan kode room atau memindai QR.
+
+---
+
+## 1. Autentikasi
+
+### Login
+
+![Tampilan halaman Login](/window/login.png)
+
+Layar pertama aplikasi, tempat masuk dengan akun.
+
+- Masuk memakai tombol **MASUK** (akun email atau Google).
+- Belum punya akun? Daftar dulu lewat tautan yang tersedia di halaman ini.
+- Setelah masuk, kamu diarahkan ke beranda.
+
+---
+
+## 2. Beranda
+
+### Dashboard / Home
+
+![Tampilan halaman beranda](/window/dashboard.png)
+
+Halaman utama setelah login, tempat semua permainan dimulai.
+
+- **BUAT** → kamu menjadi host: pilih kuis, atur pengaturan, lalu buka room.
+- **GABUNG** → kamu menjadi player: masukkan kode room untuk ikut bermain.
+
+---
+
+## 3. Host: Memilih Kuis
+
+### Pilih Kuis
+
+![Tampilan halaman pilih kuis](/window/selectKuis.png)
+
+Daftar kuis yang siap dipakai host.
+
+- Klik kartu kuis untuk melihat detailnya.
+- Cari dengan kotak pencarian atau filter kategori di bagian atas.
+- Perhatikan status di kartu: **TERBUKA!** artinya kuis bisa dimainkan.
+- Kuis buatanmu sendiri muncul di daftar **Kuis Saya**.
+
+### Detail Kuis
+
+![Tampilan dialog detail kuis](/window/KuisDetail.png)
+
+Jendela pratinjau yang muncul saat kartu kuis diklik.
+
+- Menampilkan judul, deskripsi, jumlah soal, bahasa, dan kategori.
+- Tekan **MULAI** untuk lanjut ke pengaturan.
+
+---
+
+## 4. Host: Pengaturan
+
+### Pengaturan Kuis
+
+![Tampilan halaman pengaturan kuis](/window/kuisSetings.png)
+
+Menentukan aturan main kuis, lalu membuka room.
+
+- Atur jumlah soal, jumlah memori, waktu per soal, dan tingkat kesulitan (MUDAH / SEDANG / SULIT).
+- Tekan **BUAT** — room langsung terbuka dan kamu dibawa ke lobby host.
+
+---
+
+## 5. Player: Masuk ke Room
+
+### Gabung Room
+
+![Tampilan halaman gabung room](/window/join.png)
+
+Tempat player masuk ke room permainan.
+
+- Masukkan kode room (6 huruf) lalu tekan **GABUNG**.
+- Kalau sudah pernah masuk, identitas dan avatar terisi otomatis.
+- Kalau gagal, periksa kembali kodenya atau minta kode baru ke host.
+
+### Scan QR
+
+<Callout type="info">
+  **Bagian ini belum punya screenshot.** Alur pemindaian tetap berjalan di aplikasi,
+  tapi belum ada tangkapan layar yang tersimpan.
+</Callout>
+
+Akses cepat masuk room tanpa mengetik kode.
+
+- Tekan **SCAN**, izinkan kamera, lalu arahkan ke QR yang tampil di layar host.
+- Kode room terisi otomatis, lanjutkan dengan GABUNG.
+- Fitur ini hanya jalan di alamat **https** atau **localhost**.
+
+---
+
+## 6. Host: Lobby
+
+### Lobby Host
+
+![Tampilan lobby host](/window/hostWaitingRoom.png)
+
+Ruang menunggu sebelum permainan dimulai.
+
+- Bagikan kode room ke player lewat **SALIN** (salin kode) atau **BAGIKAN** (bagikan link room).
+- Player yang masuk muncul di daftar; klik kartunya lalu **KELUARKAN** jika perlu.
+- Tekan **MULAI** saat sudah ada pemain — semua perangkat masuk ke countdown.
+
+---
+
+## 7. Player: Ruang Tunggu
+
+### Ruang Tunggu Player
+
+![Tampilan ruang tunggu player](/window/playerWaittingRoom.png)
+
+Halaman setelah player berhasil masuk room.
+
+- Lihat daftar pemain yang sudah bergabung; kartumu ditandai **ANDA**.
+- Masuk layar penuh jika diminta, lalu tunggu host memulai.
+
+---
+
+## 8. Countdown
+
+### Hitung Mundur
+
+![Tampilan hitung mundur](/window/countdount.png)
+
+Layar transisi 3-2-1 sebelum kuis dimulai.
+
+- Hitungan **sama persis di semua perangkat** — tidak ada yang mulai lebih dulu.
+- Tidak perlu diklik apa pun; begitu selesai, kuis dimulai serentak.
+
+---
+
+## 9. Gameplay Kuis
+
+### Soal Teks
+
+![Tampilan gameplay kuis](/window/playGame.png)
+
+Permainan selingan di sela-sela kuis untuk menguji ingatan.
+
+- Semua kartu menghadap ke bawah; buka **dua kartu** untuk mencari pasangan yang sama.
+- Pasangan yang cocok terkunci terbuka; kalau salah, seluruh papan bisa diacak ulang.
+- Jumlah kartu mengikuti tingkat kesulitan: MUDAH 12, SEDANG 16, SULIT 20.
+- Muncul otomatis setelah soal ketiga, lalu setiap **3 jawaban benar**.
+
+### Soal Bergambar + Zoom
+
+![Tampilan soal kuis bergambar](/window/playGame2.png)
+
+Sama seperti soal teks, tapi soal atau pilihannya berupa **gambar**.
+
+- Gambar bisa diperbesar dengan **mengetuk/mengklik** gambarnya.
+- Tampilan ini muncul otomatis — soal bergambar dan teks bisa bergantian dalam satu kuis.
+
+---
+
+## 10. Mini Game: Memory Challenge
+
+### Memory Challenge
+
+![Tampilan mini game memory card](/window/kuisGame.png)
+
+Halaman utama permainan: baca soal, jawab, ulangi sampai semua selesai.
+
+- Baca soal di atas, lalu pilih salah satu dari **4 pilihan** jawaban.
+- Benar → skor naik. Salah → muncul "JAWABAN SALAH" dan kamu bisa mencoba lagi.
+- Urutan pilihan selalu diacak; ada bar progres soal dan timer di layar.
+- Saat soal atau waktu habis, kamu diarahkan ke halaman hasil.
+
+---
+
+## 11. Host: Pantau Langsung
+
+### Monitor Host Live
+
+![Tampilan monitor host](/window/host.png)
+
+Host memantau seluruh player tanpa ikut menjawab soal.
+
+- Kartu tiap pemain menunjukkan fase saat ini: **KUIS**, **GAME**, atau **SELESAI**.
+- Perkembangan bergerak otomatis — tidak perlu me-refresh halaman.
+- Tombol **AKHIRI** untuk mengakhiri permainan lebih awal.
+
+---
+
+## 12. Hasil & Peringkat
+
+### Hasil Player
+
+![Tampilan halaman hasil player](/window/playerResult.png)
+
+Halaman akhir bagi player, menampilkan hasil pribadi.
+
+- Perlihatkan peringkat (JUARA 1, 2, 3, dst.), skor, BENAR, WAKTU, dan AKURASI.
+- Tekan **KEMBALI KE BERANDA** setelah selesai melihat hasil.
+
+### Leaderboard Host
+
+![Tampilan leaderboard host](/window/hostRessult.png)
+
+Halaman pemenang yang dilihat semua orang di akhir permainan.
+
+- Podium untuk juara 1-3 lengkap dengan animasi, plus daftar peringkat lengkap.
+- Host bisa **ULANGI** (main lagi dengan kuis sama), **STATISTIK**, atau **HOME**.
+
+---
+
+## Alur 15 Tampilan ini
+
+```
+                          login.png
+                              ↓
+                        dashboard.png
+                              │
+        ┌─────────────────────┴─────────────────────┐
+        │ BUAT (host)                              │ GABUNG (player)
+        ▼                                           ▼
+  selectKuis.png ──► KuisDetail.png                 join.png
+        │                                            │
+        ▼                                            │
+  kuisSetings.png                                    │
+        │                                            │
+        └────────────────┬───────────────────────────┘
+                         ▼
+               hostWaitingRoom.png      ←── host tekan MULAI
+                         │
+                         ▼
+              playerWaittingRoom.png    ←── player masuk fullscreen
+                         │
+                         ▼
+                  countdount.png
+                         │
+                         ▼
+      ┌───────────────────────────────────────────────┐
+      │                                               │
+      ▼                                               │  tiap 3 jawaban
+  playGame.png  ⇄  playGame2.png                     │  benar ↓
+      │  (soal teks)  (soal gambar + zoom)           │
+      │                                               │
+      ▼                                               │
+  kuisGame.png  (mini game memory) ───────────────────┘
+      │
+      └─► kembali ke soal terakhir (loop)
+
+                         │  permainan selesai
+        ┌────────────────┴────────────────┐
+        ▼                                 ▼
+ playerResult.png              host.png  ← host memantau
+                                      sepanjang main
+                         └────────────────┘
+                                  ▼
+                           hostRessult.png
+```
+
+<Callout type="info">
+  **Ingin tahu cara membangunnya?** Bab [Frontend](/docs/memory-game/frontend)
+  menjelaskan kode tiap halaman di atas, mulai dari Home, Select Quiz, Host Lobby,
+  sampai Player Result.
+</Callout>

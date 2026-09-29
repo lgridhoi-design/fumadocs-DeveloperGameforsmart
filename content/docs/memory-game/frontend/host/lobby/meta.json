@@ -1,10 +1,11 @@
 {
   "title": "Lobby",
+  "icon": "DoorOpen",
   "pages": [
     "index",
-    "lobby-screens",
     "room-share-card",
     "player-list-card",
-    "lobby-dialogs"
+    "lobby-dialogs",
+    "lobby-screens"
   ]
 }

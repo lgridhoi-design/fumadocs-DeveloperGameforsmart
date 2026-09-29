@@ -1,12 +1,13 @@
 {
   "title": "Quiz",
+  "icon": "ListChecks",
   "pages": [
     "index",
-    "quiz-utils",
-    "quiz-storage",
-    "quiz-screens",
-    "quiz-load",
+    "quiz-broadcast",
     "quiz-game-view",
-    "quiz-broadcast"
+    "quiz-load",
+    "quiz-screens",
+    "quiz-storage",
+    "quiz-utils"
   ]
 }

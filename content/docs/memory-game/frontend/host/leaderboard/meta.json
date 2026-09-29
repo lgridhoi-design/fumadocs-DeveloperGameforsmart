@@ -1,11 +1,12 @@
 {
   "title": "Leaderboard",
+  "icon": "Trophy",
   "pages": [
     "index",
     "types",
     "leaderboard-screens",
-    "mobile-leaderboard",
     "desktop-leaderboard",
+    "mobile-leaderboard",
     "floating-action-buttons"
   ]
 }

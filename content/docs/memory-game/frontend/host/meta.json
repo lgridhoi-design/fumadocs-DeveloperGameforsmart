@@ -1,5 +1,6 @@
 {
   "title": "Host",
+  "icon": "Monitor",
   "pages": [
     "index",
     "lobby",

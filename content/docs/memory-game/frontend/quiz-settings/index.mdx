@@ -1,7 +1,9 @@
 ---
 title: "Quiz Settings"
+icon: SlidersHorizontal
 description: "Halaman pembuatan room — atur batas waktu, jumlah soal, dan mode game, lalu buat kode room baru."
 ---
+
 
 #### app/quiz-settings/page.tsx
 
@@ -130,7 +132,6 @@ function QuizSettingsPageContent() {
           id: quizId,
           title: "Custom Quiz",
           description: "A custom quiz created by the host",
-          icon: "HelpCircle",
           color: "bg-primary/10 text-primary",
           difficulty: "Medium" as const,
           questions: []

@@ -1,5 +1,6 @@
 {
   "title": "Join",
+  "icon": "ScanLine",
   "pages": [
     "index",
     "room-code",

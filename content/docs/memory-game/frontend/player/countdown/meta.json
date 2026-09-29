@@ -1,5 +1,6 @@
 {
-  "title": "Player: Countdown",
+  "title": "Countdown",
+  "icon": "Timer",
   "pages": [
     "index"
   ]

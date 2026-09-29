@@ -1,4 +1,13 @@
 {
   "title": "Frontend",
-  "pages": ["index", "home", "select-quiz", "quiz-settings", "host", "join", "player"]
+  "icon": "MonitorPlay",
+  "pages": [
+    "index",
+    "home",
+    "select-quiz",
+    "quiz-settings",
+    "host",
+    "join",
+    "player"
+  ]
 }

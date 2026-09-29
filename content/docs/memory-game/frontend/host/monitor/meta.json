@@ -1,11 +1,12 @@
 {
   "title": "Monitor",
+  "icon": "Activity",
   "pages": [
     "index",
-    "monitor-loading-screen",
     "monitor-header",
-    "time-warning",
     "player-progress-grid",
-    "end-game-dialog"
+    "time-warning",
+    "end-game-dialog",
+    "monitor-loading-screen"
   ]
 }
