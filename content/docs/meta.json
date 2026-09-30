@@ -1,4 +1,14 @@
 {
-  "title": "Tutorial",
-  "pages": ["index", "memory-game"]
+  "title": "Memory Quizez Game",
+  "icon": "Gamepad2",
+  "pages": [
+    "index",
+    "tampilan",
+    "setup",
+    "frontend",
+    "database",
+    "backend",
+    "login",
+    "deploy"
+  ]
 }

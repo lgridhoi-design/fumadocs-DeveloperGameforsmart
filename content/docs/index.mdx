@@ -1,25 +1,138 @@
 ---
-title: Pengantar Tutorial
-icon: BookOpen
-description: Kumpulan tutorial praktis cara membangun setiap game di platform GameForSmart berdasarkan kode sumber asli.
+title: Overview & Arsitektur
+icon: Home
+description: Mengenal arsitektur Memory Game — stack teknologi, alur game, dan pola sinkronisasi real-time sebelum mulai membangun.
 ---
 
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-# Pengantar Tutorial
+# Overview & Arsitektur
 
-Selamat datang di situs **Tutorial GameForSmart**! Situs ini berisi panduan **membangun** setiap game di platform GameForSmart — dari setup lingkungan, frontend, database, backend, autentikasi, sampai deployment — dengan acuan langsung pada kode sumber asli.
+Tutorial ini adalah panduan **membangun** Memory Game dari nol, mengikuti implementasi asli yang ada di folder `gfs/Memory-Game`. Fokusnya bukan cara bermain, melainkan arsitektur, keputusan teknis, dan langkah membangun setiap lapisan.
 
-Setiap game memiliki tutorial sendiri yang mengikuti siklus pengembangan nyata:
+---
 
-1. **Setup** — install, environment, dan menyiapkan database.
-2. **Frontend** — routing halaman, komponen game, dan tampilan.
-3. **Database** — skema, RLS, dan Realtime.
-4. **Backend** — logika game, API, dan sinkronisasi state.
-5. **Login** — autentikasi pengguna.
-6. **Deploy** — rilis ke server produksi.
+## Apa yang Akan Dibangun
 
-<Callout title="Game tersedia">
-Saat ini tersedia tutorial **Memory Game** di [Overview & Arsitektur](/docs/memory-game). Tutorial untuk game lain akan menyusul.
+Sebuah **platform kuis multiplayer real-time** bertema retro pixel-art dengan alur:
+
+```
+Host pilih quiz → Buat room → Lobby 
+     ↓
+Player join via kode/QR/link
+     ↓
+Countdown 10 detik (sinkron semua device)
+     ↓
+Quiz dimulai → setiap 3 jawaban → Memory Card Game
+     ↓
+Quiz selesai / waktu habis
+     ↓
+Host → Leaderboard | Player → Result
+```
+
+Fitur wajib yang dibangun: room multiplayer real-time, join via kode 6-digit & QR, mini game memory card, timer sinkron lintas device, multi-bahasa (EN/ID/AR/ZH), PWA, dan login Google.
+
+---
+
+## Aset Game: Kartu Memori
+
+Mini game memory memakai **10 kartu tema hewan** (`.webp` di `public/memogame/`). Setiap kartu dipasangkan berpasangan; pemain membuka dua kartu dan mencocokkan gambar yang sama. Jumlah pasangan yang harus dicocokkan tergantung `gameMode`: 12 (mudah), 16 (sedang), 20 (sulit).
+
+![Kartu memori — cat](/memogame/cat.webp)
+
+![Kartu memori — cow](/memogame/cow.webp)
+
+![Kartu memori — crab](/memogame/crab.webp)
+
+![Kartu memori — fox](/memogame/fox.webp)
+
+![Kartu memori — jellyfish](/memogame/jellyfish.webp)
+
+![Kartu memori — koala](/memogame/koala.webp)
+
+![Kartu memori — parrot](/memogame/parrot.webp)
+
+![Kartu memori — penguin](/memogame/penguin.webp)
+
+![Kartu memori — sea-turtle](/memogame/sea-turtle.webp)
+
+![Kartu memori — whale](/memogame/whale.webp)
+
+Daftar lengkap dipakai langsung oleh komponen `MemoryGame` di `components/game/memory-game.tsx` dan animasi kartu jatuh di `components/home/falling-pixel-cards.tsx`.
+
+---
+
+## Stack Teknologi
+
+| Layer | Teknologi |
+| --- | --- |
+| Framework | Next.js 14 (App Router) + React 18 + TypeScript |
+| Database & Auth | Supabase (1 project) |
+| UI | Tailwind CSS + Radix UI (shadcn/ui) |
+| Animasi | framer-motion |
+| State Sync | Supabase Realtime + BroadcastChannel |
+| i18n | i18next (EN, ID, AR, ZH) + RTL |
+| PWA | next-pwa |
+| Deploy | Custom server + PM2 |
+
+Dependency utama di `package.json`: `@supabase/supabase-js`, `@supabase/ssr`, `next-pwa`, `i18next`, `qrcode.react`, `html5-qrcode`, `sonner`, `zod`.
+
+---
+
+## Pola Sinkronisasi Satu Database (Keputusan Kunci)
+
+Versi tutorial ini memakai **satu project Supabase** sebagai sumber kebenaran tunggal:
+
+| Tabel | Kegunaan |
+| --- | --- |
+| `sessions` | Room + state game (pin, status, soal, timer) + **Realtime** |
+| `participants` | Satu baris per pemain untuk update skor paralel |
+| `quizzes` | Daftar kuis beserta soalnya |
+
+Perpindahan state (gabung player, skor naik, status berubah) disiarkan ke semua klien lewat **Supabase Realtime** (`postgres_changes`) pada tabel `sessions` dan `participants`.
+
+<Callout title="Catatan">
+Versi asli proyek memakai **dua project Supabase** (utama + players) untuk menahan update skor 100+ player tanpa rate-limit, plus RPC `update_player_progress` dan cleanup `pg_cron`. Arsitektur itu sengaja disederhanakan di sini — cukup satu project agar mudah dipahami dan langsung berfungsi. Perbandingan detail dibahas di bab [Database](/docs/memory-game/database).
+</Callout>
+
+---
+
+## Struktur Folder
+
+```
+app/                   # Halaman Next.js (App Router)
+  login/               # Login Google + email/password
+  select-quiz/         # Host memilih quiz
+  quiz-settings/       # Atur jumlah soal, waktu, mode game
+  host/[roomCode]/     # lobby, monitor
+  host/leaderboard/    # ranking akhir host
+  join/                # Player masuk room
+  player/[roomCode]/   # waiting, quiz, game/countdown, game/memory-challenge, result
+  api/                 # Route Handlers (join, heartbeat, countdown-state)
+components/            # ui/, layout/, guards/, game/, player/, join/, branding/, feedback/, home/, providers/
+contexts/              # AuthContext (state autentikasi global)
+hooks/                 # use-room, use-quiz, use-synchronized-timer, dll
+lib/                   # supabase client, room manager, score queue, quiz-memory-flow
+locale/                # Terjemahan i18n + folder RTL
+public/                # Aset: /memogame/*.webp, /avatars, /audio, /flag, /font
+```
+
+---
+
+## Siklus Hidup Status Room
+
+State game mengalir lewat satu field `status` pada sesi:
+
+```
+waiting → countdown → quiz ⇄ memory → finished
+```
+
+- **waiting** → lobby, player bisa masuk.
+- **countdown** → timer 10 detik (dideteksi dari `countdown_started_at`).
+- **quiz / memory** → fase soal dan fase kartu memori bergantian.
+- **finished** → leaderboard & result, lalu sinkronisasi skor dari B ke A.
+
+<Callout title="Catatan">
+Tutorial ini adalah ringkasan dari kode asli. Detail per lapisan ada di halaman berikutnya: [Setup](/docs/memory-game/setup) → [Frontend](/docs/memory-game/frontend) → [Database](/docs/memory-game/database) → [Backend](/docs/memory-game/backend) → [Login](/docs/memory-game/login) → [Deploy](/docs/memory-game/deploy).
 </Callout>

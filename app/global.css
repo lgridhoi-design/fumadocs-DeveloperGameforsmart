@@ -10,3 +10,32 @@ html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
 }
+
+.mc-card {
+  animation: mc-flip 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes mc-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  28% {
+    transform: rotateY(180deg);
+  }
+  45% {
+    transform: rotateY(180deg);
+  }
+  73% {
+    transform: rotateY(360deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-card {
+    animation: none;
+    transform: rotateY(180deg);
+  }
+}

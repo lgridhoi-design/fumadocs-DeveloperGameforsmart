@@ -9,11 +9,11 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 # Tampilan Memory-Game
 
-Galeri **15 tampilan** aplikasi Memory Game. Setiap tampilan dijelaskan secara singkat: halaman ini untuk apa dan cara memakainya.
+Tampilan aplikasi Memory Game. Setiap tampilan dijelaskan secara singkat: halaman ini untuk apa dan cara memakainya.
 
 <Callout type="info">
   Bab ini **tidak membahas kode**. Kalau yang kamu cari cara membangun tiap halaman,
-  buka bab [Frontend](/docs/memory-game/frontend).
+  buka bab [Frontend](/docs/frontend).
 </Callout>
 
 ---
@@ -62,7 +62,6 @@ Daftar kuis yang siap dipakai host.
 
 - Klik kartu kuis untuk melihat detailnya.
 - Cari dengan kotak pencarian atau filter kategori di bagian atas.
-- Perhatikan status di kartu: **TERBUKA!** artinya kuis bisa dimainkan.
 - Kuis buatanmu sendiri muncul di daftar **Kuis Saya**.
 
 ### Detail Kuis
@@ -72,7 +71,7 @@ Daftar kuis yang siap dipakai host.
 Jendela pratinjau yang muncul saat kartu kuis diklik.
 
 - Menampilkan judul, deskripsi, jumlah soal, bahasa, dan kategori.
-- Tekan **MULAI** untuk lanjut ke pengaturan.
+- Tekan **LANJUTKAN** untuk lanjut ke pengaturan.
 
 ---
 
@@ -85,7 +84,7 @@ Jendela pratinjau yang muncul saat kartu kuis diklik.
 Menentukan aturan main kuis, lalu membuka room.
 
 - Atur jumlah soal, jumlah memori, waktu per soal, dan tingkat kesulitan (MUDAH / SEDANG / SULIT).
-- Tekan **BUAT** — room langsung terbuka dan kamu dibawa ke lobby host.
+- Tekan **LANJUTKAN** — room langsung terbuka dan kamu dibawa ke lobby host.
 
 ---
 
@@ -112,7 +111,6 @@ Akses cepat masuk room tanpa mengetik kode.
 
 - Tekan **SCAN**, izinkan kamera, lalu arahkan ke QR yang tampil di layar host.
 - Kode room terisi otomatis, lanjutkan dengan GABUNG.
-- Fitur ini hanya jalan di alamat **https** atau **localhost**.
 
 ---
 
@@ -125,7 +123,7 @@ Akses cepat masuk room tanpa mengetik kode.
 Ruang menunggu sebelum permainan dimulai.
 
 - Bagikan kode room ke player lewat **SALIN** (salin kode) atau **BAGIKAN** (bagikan link room).
-- Player yang masuk muncul di daftar; klik kartunya lalu **KELUARKAN** jika perlu.
+- Player yang masuk muncul di daftar.
 - Tekan **MULAI** saat sudah ada pemain — semua perangkat masuk ke countdown.
 
 ---
@@ -149,7 +147,7 @@ Halaman setelah player berhasil masuk room.
 
 ![Tampilan hitung mundur](/window/countdount.png)
 
-Layar transisi 3-2-1 sebelum kuis dimulai.
+Layar menampilkan hitung mundur 10-1 sebelum kuis dimulai.
 
 - Hitungan **sama persis di semua perangkat** — tidak ada yang mulai lebih dulu.
 - Tidak perlu diklik apa pun; begitu selesai, kuis dimulai serentak.
@@ -161,24 +159,15 @@ Layar transisi 3-2-1 sebelum kuis dimulai.
 ### Soal Teks
 
 ![Tampilan gameplay kuis](/window/playGame.png)
+![Tampilan soal kuis bergambar](/window/playGame2.png)
 
 Permainan selingan di sela-sela kuis untuk menguji ingatan.
 
 - Semua kartu menghadap ke bawah; buka **dua kartu** untuk mencari pasangan yang sama.
 - Pasangan yang cocok terkunci terbuka; kalau salah, seluruh papan bisa diacak ulang.
 - Jumlah kartu mengikuti tingkat kesulitan: MUDAH 12, SEDANG 16, SULIT 20.
-- Muncul otomatis setelah soal ketiga, lalu setiap **3 jawaban benar**.
+- Muncul otomatis setelah soal ketiga
 
-### Soal Bergambar + Zoom
-
-![Tampilan soal kuis bergambar](/window/playGame2.png)
-
-Sama seperti soal teks, tapi soal atau pilihannya berupa **gambar**.
-
-- Gambar bisa diperbesar dengan **mengetuk/mengklik** gambarnya.
-- Tampilan ini muncul otomatis — soal bergambar dan teks bisa bergantian dalam satu kuis.
-
----
 
 ## 10. Mini Game: Memory Challenge
 
@@ -189,8 +178,7 @@ Sama seperti soal teks, tapi soal atau pilihannya berupa **gambar**.
 Halaman utama permainan: baca soal, jawab, ulangi sampai semua selesai.
 
 - Baca soal di atas, lalu pilih salah satu dari **4 pilihan** jawaban.
-- Benar → skor naik. Salah → muncul "JAWABAN SALAH" dan kamu bisa mencoba lagi.
-- Urutan pilihan selalu diacak; ada bar progres soal dan timer di layar.
+- Urutan pilihan selalu diacak, ada bar progres soal dan timer di layar.
 - Saat soal atau waktu habis, kamu diarahkan ke halaman hasil.
 
 ---
@@ -217,8 +205,7 @@ Host memantau seluruh player tanpa ikut menjawab soal.
 
 Halaman akhir bagi player, menampilkan hasil pribadi.
 
-- Perlihatkan peringkat (JUARA 1, 2, 3, dst.), skor, BENAR, WAKTU, dan AKURASI.
-- Tekan **KEMBALI KE BERANDA** setelah selesai melihat hasil.
+- Perlihatkan peringkat (JUARA 1, 2, 3, dst.), SKOR, BENAR, WAKTU, dan AKURASI.
 
 ### Leaderboard Host
 
@@ -238,48 +225,49 @@ Halaman pemenang yang dilihat semua orang di akhir permainan.
                               ↓
                         dashboard.png
                               │
-        ┌─────────────────────┴─────────────────────┐
-        │ BUAT (host)                              │ GABUNG (player)
-        ▼                                           ▼
-  selectKuis.png ──► KuisDetail.png                 join.png
+         ┌─────────────────────┴─────────────────────┐
+         │ BUAT (host)                               │ GABUNG (player)
+         ▼                                           ▼
+   selectKuis                                        join
         │                                            │
         ▼                                            │
-  kuisSetings.png                                    │
+   kuisSetings                                       │
         │                                            │
         └────────────────┬───────────────────────────┘
-                         ▼
-               hostWaitingRoom.png      ←── host tekan MULAI
+                          ▼
+                   hostWaitingRoom       ←── host tekan MULAI
+
                          │
                          ▼
-              playerWaittingRoom.png    ←── player masuk fullscreen
+                   playerWaittingRoom      ←── player masuk fullscreen
                          │
                          ▼
-                  countdount.png
+                     countdount
                          │
                          ▼
       ┌───────────────────────────────────────────────┐
       │                                               │
       ▼                                               │  tiap 3 jawaban
-  playGame.png  ⇄  playGame2.png                     │  benar ↓
-      │  (soal teks)  (soal gambar + zoom)           │
+  playGame  ⇄  playGame2                             │   ↓
+      │  (soal teks)  (soal gambar + zoom)            │
       │                                               │
       ▼                                               │
-  kuisGame.png  (mini game memory) ───────────────────┘
+  kuisGame  (mini game memory) ───────────────────┘
       │
       └─► kembali ke soal terakhir (loop)
 
                          │  permainan selesai
         ┌────────────────┴────────────────┐
         ▼                                 ▼
- playerResult.png              host.png  ← host memantau
-                                      sepanjang main
+  playerResult                          host ← host memantau
+                                          sepanjang main
                          └────────────────┘
                                   ▼
-                           hostRessult.png
+                           hostRessult
 ```
 
 <Callout type="info">
-  **Ingin tahu cara membangunnya?** Bab [Frontend](/docs/memory-game/frontend)
-  menjelaskan kode tiap halaman di atas, mulai dari Home, Select Quiz, Host Lobby,
+  **Ingin tahu cara membangunnya?** Bab [Frontend](/docs/frontend)
+  menjelaskan kode tiap halaman di atas, mulai dari Home, Host Lobby,
   sampai Player Result.
 </Callout>
