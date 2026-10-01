@@ -1,9 +1,159 @@
 ---
 title: "JoinLoadingScreen"
-description: "Layar pemuatan saat memasuki room."
+icon: LoaderCircle
+description: "Kartu jeda MEMUAT vs BERGABUNG vs MENYIAPKAN — beda pemicu, beda teks."
 ---
 
-Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+# JoinLoadingScreen — Tiga Teks, Satu Kartu
+
+File ini cuma 33 baris dan tidak punya logika jam, timer, atau fetch. Yang dibahas di sini adalah **cara membedakan 3 kondisi tunggu** yang kelihatannya sama tapi penyebabnya beda:
+
+1. `MEMUAT... / MEMERIKSA AKUN` — Supabase Auth belum jawab, Player belum tentu login.
+2. `BERGABUNG... / SELAMAT DATANG, X` — Player sudah login + buka link `?room=`, sistem lagi auto-join.
+3. `MEMUAT... / MENYIAPKAN HALAMAN GABUNG` — React `Suspense` lagi download kode halaman.
+
+Salah baca teksnya → salah perbaiki. Nyangkut di No.1 berarti cek Auth, nyangkut di No.2 berarti cek kode room, nyangkut di No.3 berarti cek network.
+
+---
+
+## 0. Mini-Roadmap
+
+```
+ ┌─────────────────┐      ┌──────────────────────────────┐      ┌──────────────────┐
+ │  Previous       │      │  📍 CURRENT                  │      │  Next            │
+ │  /join cek:     │ loading│  join-loading-screen.tsx   │ siap │  form JoinCard   │
+ │  auth? link?    │ ───▶ │  Play muter + title +        │ ───▶ │  atau waiting    │
+ │  suspense?      │      │  subtitle (tanpa tombol)     │      │  👤 Player       │
+ │  👤 System      │      │  👤 Player diam menunggu     │      │                  │
+ └─────────────────┘      └──────────────────────────────┘      └──────────────────┘
+```
+
+| Pemicu di `page.tsx` | Teks yang tampil | Keluar ke mana |
+| --- | --- | --- |
+| `authLoading \|\| !isAuthenticated` baris 292 | `MEMUAT... / MEMERIKSA AKUN` | `/login` (via `router.push`) |
+| `showAutoJoinScreen && isFromUrlDirect` baris 301 | `BERGABUNG... / SELAMAT DATANG, NAMA` | `waiting` atau fallback form setelah 5 detik |
+| `<Suspense fallback>` baris 349 | `MEMUAT... / MENYIAPKAN HALAMAN GABUNG` | Form Join setelah chunk JS sampai |
+
+---
+
+## 1. Lihat Hasilnya
+
+Tidak ada file PNG karena durasinya 1-5 detik dan butuh kondisi login khusus untuk Playwright. Bentuknya:
+
+```
+ ┌─────────────────────────┐
+ │  [▶ berputar]           │  kotak putih 64px, Play hitam animate-spin
+ │  BERGABUNG...           │  title wajib UPPERCASE pixel-font
+ │  SELAMAT DATANG, BUDI   │  subtitle opsional, putih 80%
+ └─────────────────────────┘
+   belakang: bayangan miring biru-ungu + background pixel gelap
+```
+
+Bedakan dari `JoinCard`: kartu ini kecil (`inline-block`, `p-6`, `text-center`), tidak ada input, tidak ada tombol. Kalau ada tombol, berarti kamu salah lihat — itu `JoinCard`, bukan file ini.
+
+---
+
+## 2. Bedah Sesuai Tiga Pemakaian
+
+<Accordions>
+<Accordion title="Pemakaian 1: MEMERIKSA AKUN — jebakan auth">
+
+**Kode pemicu:** `page.tsx:292-299`
+```tsx
+if (authLoading || !isAuthenticated) return (<JoinLoadingScreen title="MEMUAT..." subtitle="MEMERIKSA AKUN" />)
+```
+Ditambah `useEffect page.tsx:66-73` yang simpan `sessionStorage.pendingRedirect` lalu `router.push('/login')`.
+
+Artinya: layar ini tampil **sambil** Auth dicek, lalu langsung dibuang ke Login. Player tidak sempat baca lama. Kalau layar ini nyangkut > 3 detik, bukan salah kartu — `useAuth()` / `AuthContext` tidak kunjung jawab (Supabase key salah / offline).
+
+Cara bedakan dengan yang lain: subtitlenya selalu `MEMERIKSA AKUN`, tidak ada nama Player karena nama belum tahu.
+
+</Accordion>
+
+<Accordion title="Pemakaian 2: BERGABUNG — auto-join via link">
+
+**Kode pemicu:** `page.tsx:261-282 + 284-290 + 301-308`.
+
+Alurnya spesifik file ini: `roomCodeParam` ada → `showAutoJoinScreen=true` awal → `useEffect` cek `code.length===6` + `displayName` ada → `handleJoinRoom(code, avatar)` otomatis → sukses → `router.push(waiting)`.
+
+Timer pengaman baris 284: kalau dalam 5 detik `autoJoinFiredRef` tetap false (misal kode 2 huruf), paksa `setShowAutoJoinScreen(false)` agar kembali ke form manual. Tanpa timer ini Player nyangkut selamanya di layar putar.
+
+Subtitlenya dinamis: SELAMAT DATANG + nama Player dalam huruf kapital — satu-satunya pemakaian yang pakai nama. Kalau kamu lihat nama kamu di layar putar, berarti kamu di jalur ini, bukan jalur auth.
+
+Avatar yang dipakai dikunci di `stableAutoJoinAvatarRef` agar tidak berubah di tengah jalan saat `userProfile` telat datang.
+
+</Accordion>
+
+<Accordion title="Pemakaian 3: Suspense fallback — React belum siap">
+
+**Kode pemicu:** `page.tsx:347-356`
+```tsx
+<Suspense fallback={<JoinLoadingScreen title="MEMUAT..." subtitle="MENYIAPKAN HALAMAN GABUNG" />}>
+```
+
+Ini satu-satunya yang di luar `JoinPageContent`. Muncul saat Next.js masih download chunk `useSearchParams` (makanya `page.tsx` dibungkus `Suspense` — aturan Next.js untuk `useSearchParams`).
+
+Bedanya: tidak ada `PageCornerLogos` tambahan? Ada — tetap dibungkus `<GameBackground>`, jadi logo pojok tetap ada. Teksnya `MENYIAPKAN HALAMAN GABUNG`, bukan `MEMERIKSA AKUN`. Kalau kamu throttle ke Slow 3G baru terlihat; di wifi kencang tidak sempat terlihat.
+
+</Accordion>
+
+<Accordion title="Isi kartu: kenapa Play + rotate-1 + border-4?">
+
+**Kode yang dibahas:** baris 20-31.
+
+- Parent `min-h-screen flex items-center justify-center` (baris 20): selalu tengah vertikal, bahkan di HP pendek.
+- Bayangan `absolute inset-0 rotate-1 from-blue-600` (baris 22) + badan `relative from-blue-500 border-4` (baris 23): teknik yang sama dengan `JoinCard`, sengaja disamakan agar transisi loading → form tidak jarring warnanya.
+- Ikon `Play h-8 w-8 animate-spin` di kotak putih 64px (baris 24-26): dipilih Play karena temanya game; diputar via `animate-spin` agar jelas hidup. Bukan tombol — tidak ada `onClick`.
+- `title` wajib, `subtitle?` opsional (baris 13-16). Selalu UPPERCASE + `pixel-font` agar arcade. Jangan kirim kalimat panjang — kartu `inline-block` akan melebar jelek di mobile.
+
+</Accordion>
+</Accordions>
+
+---
+
+## 3. Uji Sesuai Teksnya
+
+<Tabs items={['MEMERIKSA AKUN', 'BERGABUNG', 'MENYIAPKAN']}>
+<Tab value="MEMERIKSA AKUN">
+1. Logout total, buka `/join` di incognito
+2. Harus kedip `MEMUAT... / MEMERIKSA AKUN` → langsung `/login`
+3. Kalau nyangkut: cek `.env.local` Supabase URL/key + console `AuthContext` error
+</Tab>
+<Tab value="BERGABUNG">
+1. Login dulu, buka `/join?room=K7P2MA` dengan kode aktif
+2. Harus `BERGABUNG... / SELAMAT DATANG, NAMAMU` → ke waiting tanpa klik
+3. Coba kode 2 huruf `/join?room=ZZ` → 5 detik → kembali form manual (bukti timer pengaman jalan)
+</Tab>
+<Tab value="MENYIAPKAN">
+1. DevTools → Network → Slow 3G, reload `/join`
+2. Harus `MEMUAT... / MENYIAPKAN HALAMAN GABUNG` lebih lama dari biasa
+3. Kembalikan ke No throttling → hilang cepat. Ini murni kecepatan download JS, bukan Auth.
+</Tab>
+</Tabs>
+
+---
+
+## 4. Bangun Sendiri
+
+<Steps>
+<Step>
+### Salin file tanpa dependensi server
+Buat `app/join/components/join-loading-screen.tsx`, paste Bagian 5. Satu-satunya import `Play` dari `lucide-react`. Tidak perlu `useRouter`, `supabase`, atau `roomManager`.
+</Step>
+<Step>
+### Pakai dengan teks yang tepat di tempat yang tepat
+Jangan pakai teks ngawur. Salin 3 pasang ini persis dari `page.tsx`: `MEMUAT/MEMERIKSA AKUN` untuk auth, `BERGABUNG/SELAMAT DATANG` untuk auto-join, `MEMUAT/MENYIAPKAN` untuk Suspense. Selalu bungkus `<GameBackground><PageCornerLogos /><JoinLoadingScreen /></GameBackground>` agar background + logo tidak hilang.
+</Step>
+</Steps>
+
+---
+
+## 5. Kode Lengkap
 
 #### app/join/components/join-loading-screen.tsx
 
@@ -32,3 +182,15 @@ export function JoinLoadingScreen({ title, subtitle }: JoinLoadingScreenProps) {
   )
 }
 ```
+
+---
+
+## 6. Verifikasi Visual
+
+<Callout title="✅ Checkpoint bedakan teksnya">
+- [ ] Kecil di tengah, Play berputar, tanpa input/tombol (kalau ada tombol = salah file)
+- [ ] Belum login → `MEMERIKSA AKUN`; via link → ada namamu; reload lambat → `MENYIAPKAN`
+- [ ] Hilang sendiri: auth → ke login, link valid → ke waiting, link 2 huruf → kembali form setelah 5 detik
+</Callout>
+
+Lanjut: [AccessDeniedModal](/docs/frontend/join/access-denied-modal) — popup merah saat allowlist menolak.

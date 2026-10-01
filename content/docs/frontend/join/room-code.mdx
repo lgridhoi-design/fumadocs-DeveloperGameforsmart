@@ -1,9 +1,124 @@
 ---
 title: "Join: Kode Room"
-description: "Rute yang me-redirect ke waiting room pemain."
+icon: Link
+description: "File 6 baris /join/[roomCode] — shortlink agar QR Host langsung terisi di form."
 ---
 
-Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+# Kode Room — Shortlink /join/ABC123
+
+Fungsi file ini beda dari semua file Join lain: ia **tidak menggambar apa pun**. Ia cuma membaca potongan URL lalu membelokkan browser.
+
+Contoh nyata yang dibahas di sini:
+- Host membagikan `https://game.com/join/K7P2MA` (jalur path, enak untuk QR)
+- File ini menangkap `K7P2MA` dari `params.roomCode`
+- Lalu membelokkan ke `https://game.com/join?room=K7P2MA` (jalur query, yang dimengerti form input)
+
+Tanpa belokan ini, QR Host akan 404 karena tidak ada folder bernama `K7P2MA`.
+
+---
+
+## 0. Mini-Roadmap
+
+```
+ ┌──────────────────┐      ┌──────────────────────────────┐      ┌──────────────────┐
+ │  Previous        │      │  📍 CURRENT                  │      │  Next            │
+ │  Host bagikan    │ ───▶ │  /join/[roomCode]/page.tsx   │ ───▶ │  /join?room=...  │
+ │  .../join/K7P2MA │ klik │  ambil params → redirect()   │ auto │  input terisi,   │
+ │  👑 Host         │      │  🤖 Server, 0 klik           │      │  auto-join 👤    │
+ └──────────────────┘      └──────────────────────────────┘      └──────────────────┘
+```
+
+| Sebelum | Di sini | Sesudah |
+| --- | --- | --- |
+| QR / tombol BAGIKAN berisi path `/join/K7P2MA` | **Baca `params.roomCode` → `redirect('/join?room=...')`** | `app/join/page.tsx` baca `searchParams.get("room")` lalu isi `useState(roomCode)` |
+| Peran: Host | Peran: Sistem | Peran: Player |
+
+<Callout title="Kenapa dua bentuk URL?">
+Path `/join/K7P2MA` pendek dan cocok untuk QR. Tapi form input di `join-card.tsx` hanya mengerti query `?room=`. File ini penerjemah keduanya. Kalau kamu hapus folder `[roomCode]`, semua QR lama Host langsung rusak.
+</Callout>
+
+---
+
+## 1. Apa yang Dilihat Player?
+
+Tidak ada. Sengaja.
+
+Urutannya kalau kamu klik link Host:
+1. Layar putih kedip < 300ms (server jalankan `redirect`)
+2. URL berubah sendiri dari `/join/K7P2MA` jadi `/join?room=K7P2MA`
+3. Baru muncul kartu ungu ini dengan kolom sudah terisi:
+
+![Form Join terisi otomatis dari shortlink](/window/join.png)
+
+Jadi kalau mau verifikasi file ini, jangan cari tampilannya — verifikasi **perubahan URL**-nya.
+
+---
+
+## 2. Bedah Baris per Baris
+
+File ini cuma 6 baris, tapi tiap baris ada alasannya:
+
+**Baris 1: `import { redirect } from "next/navigation"`**
+- Ini redirect server, bukan `useRouter().push` yang client. Dieksekusi sebelum HTML dikirim, jadi lebih cepat dan tidak perlu JavaScript jalan dulu.
+- Konsekuensi: file ini **dilarang** pakai `"use client"`. Kalau kamu tambah `use client`, `redirect` ini error.
+
+**Baris 3: `({ params }: { params: { roomCode: string } })`**
+- `params.roomCode` otomatis diisi Next.js dari nama folder `[roomCode]`. Folder `[roomCode]` = variabel. Kalau folder kamu bernama `[kode]`, maka jadinya `params.kode`.
+- Contoh: buka /join/K7P2MA → roomCode berisi K7P2MA. Buka /join/abc → roomCode berisi abc (huruf kecil, nanti di-uppercase di page.tsx, bukan di sini).
+
+**Baris 5: redirect ke /join?room= + roomCode**
+- Tidak ada validasi panjang 6 di sini. Sengaja — validasi 6 digit ada di page.tsx baris 267-270. File ini buta, tugasnya teruskan apa pun.
+- Setelah baris ini, kode di bawahnya (kalau ada) tidak akan jalan karena `redirect` melempar exception khusus Next.js.
+
+<Callout type="info">
+Alur sambungannya: `redirect` ini mendarat di `app/join/page.tsx:40` — `searchParams.get("room")` → `useState(roomCodeParam.toUpperCase())` → `useEffect auto-join` kalau panjangnya 6. Jadi shortlink + auto-join itu dua file yang kerja sama.
+</Callout>
+
+---
+
+## 3. Coba Sendiri Sesuai Kasus File Ini
+
+<Tabs items={['Link Valid', 'Link Rusak', 'Buka Langsung Tanpa Link']}>
+<Tab value="Link Valid">
+1. Jalankan `npm run dev`, buat room aktif, salin kodenya misal `K7P2MA`
+2. Buka manual `http://localhost:3002/join/K7P2MA`
+3. Perhatikan address bar: harus berubah jadi `/join?room=K7P2MA` tanpa kamu tekan apa pun
+4. Input form terisi `K7P2MA`. Berarti file ini + `searchParams` di `page.tsx` nyambung.
+</Tab>
+<Tab value="Link Rusak">
+1. Buka `http://localhost:3002/join/ZZ` (cuma 2 huruf)
+2. Tetap di-redirect ke `/join?room=ZZ`, tidak 404 — karena file ini tidak validasi
+3. Baru di `/join`, `page.tsx:267` menolak karena `code.length !== 6` → tampil form kosong manual. Ini perilaku yang benar: redirect tetap, validasi di halaman tujuan.
+</Tab>
+<Tab value="Buka Langsung Tanpa Link">
+1. Buka `http://localhost:3002/join` tanpa kode
+2. File ini tidak tersentuh sama sekali (karena rutenya beda: `/join` vs `/join/[roomCode]`)
+3. Form kosong, Player ketik manual. Gunakan ini sebagai pembanding bahwa redirect hanya untuk jalur QR/share.
+</Tab>
+</Tabs>
+
+---
+
+## 4. Bangun Sendiri
+
+<Steps>
+<Step>
+### Buat folder dengan kurung siku
+Path wajib: `app/join/[roomCode]/page.tsx`. Kurung siku artinya dynamic. Salah nama misal `app/join/roomCode/page.tsx` → jadinya route statis `/join/roomCode`, shortlink Host tetap 404.
+</Step>
+<Step>
+### Paste dan uji redirect, bukan tampilan
+Paste kode Bagian 5. Uji: buka `/join/ABC123` → address bar harus jadi `/join?room=ABC123`. Kalau tetap di `/join/ABC123`, berarti file tidak kebaca (cek restart `npm run dev`).
+</Step>
+</Steps>
+
+---
+
+## 5. Kode Lengkap
 
 #### app/join/[roomCode]/page.tsx
 
@@ -15,3 +130,16 @@ export default function JoinRoomRedirectPage({ params }: { params: { roomCode: s
   redirect(`/join?room=${params.roomCode}`)
 }
 ```
+
+---
+
+## 6. Verifikasi Visual
+
+<Callout title="✅ Checkpoint khusus file ini">
+- [ ] `/join/K7P2MA` → berubah jadi `/join?room=K7P2MA` < 1 detik
+- [ ] Kolom input di `/join` terisi sendiri (kerja sama dengan `page.tsx`)
+- [ ] `/join/ZZ` tetap redirect tapi form menolak (validasi di tujuan, bukan di sini)
+- [ ] Tidak ada `"use client"` di file ini — kalau ada, hapus
+</Callout>
+
+Lanjut: [JoinCard](/docs/frontend/join/join-card) — kartu form yang menerima hasil redirect ini.

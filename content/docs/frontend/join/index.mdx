@@ -1,9 +1,207 @@
 ---
 title: "Join (Memory Game)"
 icon: ScanLine
-description: "Kode lengkap halaman join Memory Game beserta komponen pendukungnya."
+description: "Halaman Player masuk room via kode 6-digit, link, atau QR — bedah tampilan + kode lengkap."
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { File, Files, Folder } from 'fumadocs-ui/components/files';
+
+# Join — Player Masuk ke Room
+
+Bayangkan seperti **masuk kelas**: Host sudah buka kelas (room), kamu sebagai **Player** tinggal ketik **kode absen 6 huruf** lalu duduk. Halaman ini yang mengurus itu.
+
+> Kamu tidak perlu paham semua kode sekaligus. Ikuti urutan: lihat peta → lihat gambar → klik tiap nomor → baru salin kode.
+
+---
+
+## 0. Mini-Roadmap — Kamu Lagi di Mana?
+
+Wajib baca 10 detik sebelum lanjut:
+
+```
+ ┌─────────────────┐      ┌─────────────────────────┐      ┌──────────────────────────┐
+ │  Previous       │      │  📍 CURRENT             │      │  Next                    │
+ │  🏠 Dashboard   │ ───▶ │  🔑 Join /join          │ ───▶ │  ⏳ Player Waiting       │
+ │  /              │ GABUNG│  ketik kode 6-digit     │ SUKSES│  /player/[code]/waiting  │
+ │  Host + Player  │      │  👤 Player SAJA         │      │  👤 Player               │
+ └─────────────────┘      └─────────────────────────┘      └──────────────────────────┘
+```
+
+| Previous Screen | 📍 Current Screen | Next Screen |
+| --- | --- | --- |
+| 🏠 `/` Dashboard — klik **GABUNG** | **🔑 `/join` — input kode + pilih avatar (kamu di sini)** | ⏳ `/player/[roomCode]/waiting` — ruang tunggu |
+| Peran: Host + Player | Peran: **Player saja** | Peran: Player |
+
+<Callout title="Untuk Pemula">
+Kalau kamu datang dari link Host seperti `/join?room=ABC123`, halaman ini otomatis melewatkan ketikan dan langsung menampilkan layar **BERGABUNG...**. Itu normal.
+</Callout>
+
+---
+
+## 1. Lihat Dulu Hasilnya
+
+Ini tampilan yang harus jadi di browser kamu:
+
+![Halaman Join — kartu GABUNG RUANG](/window/join.png)
+
+Satu kartu ungu-biru di tengah layar. Tidak ada tabel, tidak ada dashboard. Hanya 1 tugas: **masuk room**.
+
+---
+
+## 2. Anatomi Elemen — Bedah 5 Bagian
+
+Klik tiap baris di bawah untuk melihat file kode + efeknya:
+
+<Accordions>
+<Accordion title="1. Kartu BERMAIN SEBAGAI — siapa kamu?">
+
+**Lihat di gambar:** kotak putih atas berisi foto + nama.
+
+**File:** `app/join/components/join-card.tsx:51-77` + `components/join/avatar-selector.tsx`
+
+**Efek saat dipakai:**
+- Nama otomatis dari login (Google/email). Tidak bisa diketik manual di sini.
+- Kalau ganti avatar di No.4, foto di sini ikut berubah.
+- Data disimpan ke `localStorage.currentPlayer` agar besok otomatis terisi.
+
+</Accordion>
+
+<Accordion title="2. Input KODE RUANG — 6 huruf">
+
+**Lihat di gambar:** kolom tengah besar, placeholder *Masukkan kode ruang 6 digit*.
+
+**File:** `app/join/components/join-card.tsx:94-108` + logika di `app/join/page.tsx:96-119`
+
+**Efek saat dipakai:**
+- Otomatis UPPERCASE, hanya A-Z + 0-9, maksimal 6. Spasi/simbol dibuang.
+- Paste link panjang `.../join?room=ABC123` → otomatis diekstrak jadi `ABC123` via `extractRoomCodeFromUrl()`.
+- Kosong + klik GABUNG → box merah *Kode ruang harus diisi*.
+
+</Accordion>
+
+<Accordion title="3. Tombol SCAN — masuk tanpa mengetik">
+
+**Lihat di gambar:** tombol putih kecil + ikon kamera di kanan label KODE RUANG.
+
+**File:** `app/join/components/join-card.tsx:85-92` → `components/join/qr-scanner.tsx` (pakai `html5-qrcode`)
+
+**Efek saat diklik:**
+- Membuka kamera → arahkan ke QR dari layar Host.
+- Berhasil scan → kode terisi otomatis + langsung join (`handleQRScan` di `page.tsx:249-259`).
+- Gagal/tolak kamera → tetap bisa ketik manual.
+
+</Accordion>
+
+<Accordion title="4. PILIH AVATAR — ganti foto">
+
+**Lihat di gambar:** grid avatar bulat di bawah input kode.
+
+**File:** `app/join/components/join-card.tsx:121-132`
+
+**Efek saat diklik:**
+- Avatar terpilih jadi highlight, langsung tampil di kartu No.1.
+- Diprioritaskan: pilihan manual > avatar Google > huruf inisial nama.
+- Tersimpan permanen di browser (tidak perlu pilih ulang besok).
+
+</Accordion>
+
+<Accordion title="5. Tombol GABUNG RUANG — eksekusi masuk">
+
+**Lihat di gambar:** tombol hijau besar di paling bawah.
+
+**File:** `app/join/page.tsx:121-257 handleJoinRoom` + `lib/room-manager.ts`
+
+**Efek saat diklik:**
+- Normal → teks jadi `BERGABUNG...` + tombol disabled, lalu pindah ke `/player/[kode]/waiting`.
+- Kode salah → box merah *Ruang tidak ditemukan*.
+- Game sudah mulai → *Game sudah dimulai. Silakan gabung ke ruang baru.*
+- Room khusus kompetisi + kamu tidak terdaftar → popup `AccessDeniedModal`.
+- Sukses → data player + `joinedAt` disimpan via `sessionManager` + `localStorage`.
+
+</Accordion>
+</Accordions>
+
+Struktur file halaman ini:
+
+<Files>
+<Folder name="app/join" defaultOpen>
+<File name="page.tsx" />
+<Folder name="components" defaultOpen>
+<File name="join-card.tsx" />
+<File name="join-loading-screen.tsx" />
+<File name="access-denied-modal.tsx" />
+</Folder>
+</Folder>
+</Files>
+
+Detail tiap komponen ada di sub-halaman: [room-code](/docs/frontend/join/room-code), [join-card](/docs/frontend/join/join-card), [join-loading-screen](/docs/frontend/join/join-loading-screen), [access-denied-modal](/docs/frontend/join/access-denied-modal).
+
+---
+
+## 3. Coba Sendiri — 3 Cara Masuk
+
+Pilih caramu, semua bermuara ke tombol yang sama:
+
+<Tabs items={['Ketik Manual', 'Tempel Link', 'Scan QR']}>
+<Tab value="Ketik Manual">
+1. Buka `/join`
+2. Ketik 6 huruf dari Host, contoh `K7P2MA`
+3. Pilih avatar → klik **GABUNG RUANG**
+4. Berhasil → pindah ke Waiting otomatis
+</Tab>
+<Tab value="Tempel Link">
+1. Salin link dari Host, contoh `https://memoryquiz.gameforsmart.com/join?room=K7P2MA`
+2. Paste langsung ke input kode → input otomatis jadi `K7P2MA` (tanpa link)
+3. Klik **GABUNG RUANG**
+</Tab>
+<Tab value="Scan QR">
+1. Klik **SCAN** → izinkan kamera
+2. Arahkan ke QR di layar Host
+3. Tidak perlu klik apa-apa lagi — otomatis join
+4. Kalau kamera gagal, kembali ke Ketik Manual
+</Tab>
+</Tabs>
+
+<Callout type="info">
+Pemula paling sering gagal karena: belum login (otomatis dilempar ke `/login`), salah 1 huruf (O vs 0), atau room sudah `finished`. Cek 3 itu dulu.
+</Callout>
+
+---
+
+## 4. Bangun Sendiri — Langkah Salin
+
+<Steps>
+<Step>
+### Salin 1 file utama
+Buat `app/join/page.tsx` di project kamu, paste seluruh kode di Bagian 5 bawah. Ini orkestrasi: cek login, validasi kode, panggil `roomManager.joinRoom()`, lalu `router.push` ke waiting.
+</Step>
+<Step>
+### Salin 3 komponen pendukung
+Salin dari project asli `gfs/Memory-Game`:
+- `app/join/components/join-card.tsx` → tampilan kartu
+- `app/join/components/join-loading-screen.tsx` → layar MEMUAT / BERGABUNG
+- `app/join/components/access-denied-modal.tsx` → popup kompetisi khusus
+- Pastikan `components/join/qr-scanner.tsx`, `components/layout/game-background.tsx`, `lib/room-manager.ts` sudah ada (dibahas di bab Setup/Backend).
+</Step>
+<Step>
+### Jalankan dan uji 2 kondisi
+```bash
+npm run dev
+# buka http://localhost:3002/join
+```
+Uji gagal: kosongkan kode → harus muncul box merah. Uji sukses: pakai kode room aktif dari Host → harus pindah ke `/player/[kode]/waiting`.
+</Step>
+</Steps>
+
+---
+
+## 5. Kode Lengkap
+
+Salin apa adanya. Jangan ubah kecuali path `@/` kamu berbeda.
 
 #### app/join/page.tsx
 
@@ -366,3 +564,23 @@ export default function JoinPage() {
   )
 }
 ```
+
+Kode komponen `JoinCard`, `JoinLoadingScreen`, `AccessDeniedModal` ada di sub-halaman masing-masing — tidak diduplikasi di sini agar tetap fokus.
+
+---
+
+## 6. Verifikasi Visual — Sudah Benar Belum?
+
+<Callout title="✅ Visual Checkpoint — wajib cocok sebelum lanjut">
+Pastikan tampilan di browser kamu **sama persis** dengan gambar di Bagian 1 sebelum lanjut ke Waiting:
+
+- [ ] Background pixel ungu-biru + logo pojok terlihat
+- [ ] Kartu tengah bertuliskan **GABUNG RUANG**
+- [ ] Ada nama + avatar kamu di atas
+- [ ] Input 6 digit di tengah, tombol **SCAN** di kanan
+- [ ] Tombol hijau **GABUNG RUANG** di bawah (disabled kalau kode kosong)
+- [ ] Coba kode salah → box merah muncul (berarti validasi jalan)
+</Callout>
+
+Kalau semua checklist centang, lanjut ke [Player Waiting](/docs/frontend/player/waiting) — halaman setelah Player berhasil masuk.
+

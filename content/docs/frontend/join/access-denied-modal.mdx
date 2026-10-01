@@ -1,9 +1,167 @@
 ---
 title: "AccessDeniedModal"
-description: "Modal peringatan akses ditolak."
+icon: ShieldX
+description: "Popup merah saat allowedUserIds menolak — beda dari error form biasa."
 ---
 
-Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+# AccessDeniedModal — Ditolak Karena Tidak Di Daftar
+
+File ini membahas **satu kasus spesifik**: room kompetisi yang dikunci `allowedUserIds`. Bukan kode salah, bukan game sudah mulai — tapi *kamu tidak ada di daftar undangan*.
+
+Bedanya dengan dua box merah di `JoinCard`:
+- Box merah `roomCodeError / roomError` masih di dalam form, Player bisa koreksi dan klik lagi.
+- Modal ini `fixed inset-0` menutup seluruh layar — Player tidak bisa koreksi, hanya bisa kembali ke beranda.
+
+---
+
+## 0. Mini-Roadmap
+
+```
+ ┌─────────────────┐      ┌──────────────────────────────┐      ┌──────────────────┐
+ │  Previous       │      │  📍 CURRENT                  │      │  Next            │
+ │  klik GABUNG di │ cek  │  access-denied-modal.tsx     │ tutup│  / beranda,      │
+ │  JoinCard →     │ gagal│  overlay hitam + AKSES       │ ───▶ │  cari kode lain  │
+ │  allowedUserIds?│      │  DITOLAK + 1 tombol          │      │  👤 Player       │
+ │  👤 Player      │      │  👤 Player baca              │      │                  │
+ └─────────────────┘      └──────────────────────────────┘      └──────────────────┘
+```
+
+| Pemicu | Di sini | Keluar |
+| --- | --- | --- |
+| `page.tsx:155-164`: `allowedUserIds.length>0 && !includes(userId)` → `setShowAccessDeniedAlert(true)` + `setRoomError(...)` | **Overlay + kartu + tombol KEMBALI** | `onClose` → `setShowAccessDeniedAlert(false)` + `router.replace('/')` di `page.tsx:334` |
+| Room biasa (array kosong) → lolos, modal tidak pernah dibuat | Hanya untuk room terkunci | Tidak kembali ke form (sengaja, agar tidak spam) |
+
+<Callout title="Dua tempat teks sama, jangan ubah sebelah saja">
+Kalimat *Anda tidak terdaftar dalam kompetisi ini...* ada di `page.tsx:158` (untuk box merah form) dan baris 23-25 file ini (untuk popup). Kalau diubah, ubah keduanya agar Player tidak bingung lihat dua pesan beda untuk satu penolakan.
+</Callout>
+
+---
+
+## 1. Lihat Hasilnya
+
+```
+ ▓▓▓ form Join tertutup ▓▓▓  bg-black/85 + blur
+ ┌─────────────────────┐
+ │ ━━━━ merah glow ━━━ │  h-1 bg-red-600 shadow glow
+ │  AKSES DITOLAK      │  text-red-500 pixel-font + textShadow keras
+ │  Anda tidak terdaftar│  text-white text-xs, 2 baris
+ │  ...bisa masuk.     │
+ │ [KEMBALI KE BERANDA]│  bg-red-600 boxShadow 4px, klik tenggelam
+ └─────────────────────┘  bg-neutral-900 border-4 max-w-sm
+```
+
+Sengaja hitam + merah (bukan ungu seperti Join) agar terasa *final*. Tidak ada tombol X, tidak bisa klik backdrop — satu-satunya jalan `KEMBALI KE BERANDA`.
+
+---
+
+## 2. Bedah Sesuai Alur Penolakan
+
+<Accordions>
+<Accordion title="Pemicu: cek allowlist di page.tsx, bukan di sini">
+
+**Kode yang dibahas:** `page.tsx:155-164`, bukan file ini:
+```ts
+if (room.allowedUserIds && room.allowedUserIds.length > 0) {
+  if (!userId || !room.allowedUserIds.includes(userId)) {
+    setRoomError("Anda tidak terdaftar...")
+    setShowAccessDeniedAlert(true)
+  }
+}
+```
+Artinya: `allowedUserIds = []` atau `null` → dianggap terbuka, semua lolos. `allowedUserIds = ["id-A"]` → hanya id-A lolos. `userId` diambil dari `userProfile?.id` (Supabase Auth), **bukan** dari nickname. Jadi ganti nickname tidak bisa bobol.
+
+File modal ini buta — ia tidak tahu siapa ditolak. Ia cuma tampil kalau `showAccessDeniedAlert=true` di `page.tsx:333`.
+
+Kalau modal tidak pernah muncul saat kamu uji, 90% karena room kamu terbuka. Cek Supabase `sessions.allowedUserIds`, bukan kode modal.
+
+</Accordion>
+
+<Accordion title="Overlay: kunci layar z-150">
+
+**Kode yang dibahas:** baris 17.
+
+`fixed inset-0 z-[150] bg-black/85 backdrop-blur-xs` artinya: tutup viewport penuh, di atas semua (`z-150` lebih tinggi dari navbar, QR scanner, notifikasi). `backdrop-blur-xs` buramkan form di belakang agar fokus ke kartu.
+
+Tidak ada onClose di overlay — klik luar tidak menutup. Ini disengaja agar Player baca dulu, bukan refleks klik luar. Satu-satunya onClose ada di tombol.
+
+`animate-fade-in` butuh keyframes di CSS. Kalau popup muncul kasar tanpa fade, cek `globals.css` — bukan salah file ini.
+
+</Accordion>
+
+<Accordion title="Kartu + judul: kenapa hitam dan textShadow?">
+
+**Kode yang dibahas:** baris 18-22.
+
+- Badan `bg-neutral-900 border-4 border-black shadow-[8px_8px_0px_#000]`: hitam pekat + bayangan kotak keras 8px (bukan blur halus). Gaya neo-brutalism arcade.
+- Garis `h-1 bg-red-600 shadow-[0_0_8px_#dc2626]` (baris 19): garis tipis + glow merah agar seperti lampu alarm.
+- Judul `text-red-500 pixel-font uppercase tracking-wider` + `textShadow: 2px 2px 0px #000` (baris 20): teks merah berbayang hitam keras. Jangan ganti ke `font-sans` halus — akan hilang kesan bahayanya.
+
+Lebar `max-w-sm` + `p-6 text-center`: sempit agar di HP tidak penuh, pesan 2 baris tetap terbaca.
+
+</Accordion>
+
+<Accordion title="Tombol: kembali ke beranda, bukan ke form">
+
+**Kode yang dibahas:** baris 26-32 + `page.tsx:334`.
+
+Tombol `w-full bg-red-600 hover:bg-red-700 active:translate-y-1 active:shadow-[2px_2px_0px_#000]` + `boxShadow: 4px 4px 0px #000`: tombol 3D yang tenggelam 1px saat ditekan (`translate-y-1` + shadow menyusut). Ini feedback fisik arcade.
+
+`onClose` diisi `() => { setShowAccessDeniedAlert(false); router.replace('/') }`. Pakai `replace`, bukan `push`, agar tombol Back browser tidak kembali ke popup lagi. Tujuannya `/` (beranda), bukan `/join` — agar Player tidak spam klik GABUNG untuk kode yang sama. Kalau mau coba kode lain, dari beranda klik GABUNG lagi.
+
+Props interface baris 9-11 cuma satu: `onClose: () => void`. Tidak ada props pesan/kode — teks di-hardcode karena pesan penolakan kompetisi selalu sama.
+
+</Accordion>
+</Accordions>
+
+---
+
+## 3. Uji Sesuai Kunci Allowlist
+
+<Tabs items={['Terbuka (tidak muncul)', 'Terkunci + ditolak', 'Terkunci + lolos']}>
+<Tab value="Terbuka (tidak muncul)">
+1. Host buat room biasa, pastikan `allowedUserIds` kosong/null di Supabase
+2. Join dengan akun apa pun → langsung waiting
+3. Modal tidak muncul = benar. Jangan anggap bug.
+</Tab>
+<Tab value="Terkunci + ditolak">
+1. Di `sessions`, set `allowedUserIds = ["id-user-A"]` (lihat `userProfile.id` user A)
+2. Login sebagai user B, join kode itu
+3. Harus: overlay hitam + box merah form + teks sama. Klik KEMBALI → `/`, Back browser tidak balik ke modal (bukti `replace`)
+</Tab>
+<Tab value="Terkunci + lolos">
+1. Login sebagai user A yang ada di array
+2. Join kode sama → masuk waiting tanpa modal
+3. Bukti `includes(userId)` pakai ID Auth, bukan nickname — coba ganti nickname user A, tetap lolos
+</Tab>
+</Tabs>
+
+<Callout type="info">
+Cepat uji tanpa ubah Supabase: di `page.tsx` sementara ganti `room.allowedUserIds` jadi `['test-tolak']`, join → harus ditolak. Kembalikan setelah uji.
+</Callout>
+
+---
+
+## 4. Bangun Sendiri
+
+<Steps>
+<Step>
+### Salin file tanpa library tambahan
+Buat `app/join/components/access-denied-modal.tsx`, paste Bagian 5. Tidak perlu `lucide`, `shadcn`, atau Supabase. Tombol pakai `<button>` native agar ringan.
+</Step>
+<Step>
+### Colok 3 titik di page.tsx
+Tanpa ini modal tidak pernah tampil: (1) state showAccessDeniedAlert dengan useState false, (2) blok cek allowedUserIds baris 155-164 yang set true saat ditolak, (3) render kondisional AccessDeniedModal dengan onClose yang menutup lalu router.replace ke beranda. Test dengan akun yang tidak ada di allowlist.
+</Step>
+</Steps>
+
+---
+
+## 5. Kode Lengkap
 
 #### app/join/components/access-denied-modal.tsx
 
@@ -35,3 +193,16 @@ export function AccessDeniedModal({ onClose }: AccessDeniedModalProps) {
   )
 }
 ```
+
+---
+
+## 6. Verifikasi Visual
+
+<Callout title="✅ Checkpoint penolakan">
+- [ ] Room terbuka → tidak ada modal (benar)
+- [ ] Room terkunci + user asing → overlay hitam blur, kartu hitam, garis merah glow, judul merah bayangan keras
+- [ ] Klik luar tidak menutup, klik KEMBALI → `/` dan Back tidak balik ke modal
+- [ ] Teks popup = teks box merah form (sama persis, karena satu penolakan)
+</Callout>
+
+Selesai sub-bab Join. Kembali ke [Join utama](/docs/frontend/join) atau lanjut [Player Waiting](/docs/frontend/player/waiting).

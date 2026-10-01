@@ -1,9 +1,167 @@
 ---
 title: "JoinCard"
-description: "Form isi kode room untuk bergabung."
+icon: SquarePen
+description: "Form GABUNG RUANG: filter kode A-Z0-9, tombol SCAN, avatar, dan tombol hijau."
 ---
 
-Berikut kode lengkap komponen ini dari proyek Memory Game — salin apa adanya ke jalur yang sama di proyek Anda.
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+# JoinCard — Formulir Kertasnya Player
+
+File ini membahas **satu kartu form**, bukan satu halaman. Bedanya dengan `app/join/page.tsx`: `page.tsx` urus izin + Supabase, file ini urus **ketikan, tampilan error, dan klik**.
+
+Kalau diibaratkan formulir kertas: `page.tsx` adalah petugas yang verifikasi ke server, `join-card.tsx` adalah kertasnya — kotak isian, kotak centang avatar, tombol kumpul.
+
+---
+
+## 0. Mini-Roadmap
+
+```
+ ┌──────────────┐      ┌────────────────────────────────┐      ┌──────────────────┐
+ │  Previous    │      │  📍 CURRENT                    │      │  Next            │
+ │  page.tsx    │ props│  join-card.tsx                 │ klik │  handleJoinRoom  │
+ │  siapkan     │ ───▶ │  saring ketikan + tampilkan    │ ───▶ │  cek Supabase →  │
+ │  11 props    │      │  error merah / hijau aktif     │ GABUNG│  waiting         │
+ │  👤 System   │      │  👤 Player mengetik            │      │  👤 Player       │
+ └──────────────┘      └────────────────────────────────┘      └──────────────────┘
+```
+
+| Masuk dari atas | Kerja file ini | Keluar ke bawah |
+| --- | --- | --- |
+| `roomCode`, `displayName`, `isJoining`, 8 callback lain dari `page.tsx:316-329` | **Saring tiap huruf, tampilkan error yang tepat, aktif/nonaktifkan tombol** | `onRoomCodeChange`, `onPaste`, `onScan`, `onAvatarSelect`, `onJoin` kembali ke `page.tsx` |
+| Tidak ada fetch di sini | Murni UI + validasi format | Fetch ada di `page.tsx:138 roomManager.getRoom` |
+
+---
+
+## 1. Lihat Hasilnya
+
+![Satu kartu JoinCard = hampir seluruh layar Join](/window/join.png)
+
+Patokan: semua yang ungu di gambar ini dari file ini. Yang **bukan** dari file ini: background pixel gelap (`GameBackground`) dan logo pojok (`PageCornerLogos`) — itu dari `page.tsx:311-312`.
+
+---
+
+## 2. Bedah Sesuai Blok Form
+
+<Accordions>
+<Accordion title="Blok nama: BERMAIN SEBAGAI — rantai avatar 3 tingkat">
+
+**Kode yang dibahas:** baris 48 + 61-87.
+
+Baris 48 `const avatar = selectedAvatar || profileAvatarUrl` adalah intinya: pilihan manual menang atas foto Google. Kalau keduanya kosong, jatuh ke huruf inisial `displayName.charAt(0)` baris 77.
+
+Kenapa begini? Karena `page.tsx:91-94` otomatis mengisi `selectedAvatar` dari `userProfile.avatar_url` saat login. Tapi kalau Player sempat klik avatar lain, `userChangedAvatar=true` menghentikan auto-timpa itu. Jadi urutan prioritasnya: klik manual > Google > inisial.
+
+`<PlayerName>` di baris 84 bukan sekadar teks — ia sensor kata kasar + truncate nama panjang agar tidak merusak layout kartu `max-w-md`.
+
+</Accordion>
+
+<Accordion title="Blok kode: input yang menolak simbol">
+
+**Kode yang dibahas:** baris 104-117.
+
+Tiap ketikan lewat saringan ini:
+```ts
+value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+if (value.length <= 6) onRoomCodeChange(value)
+```
+Artinya: ketik `k7-p2!ma` → tampil `K7P2MA`. Spasi, strip, emoji dibuang diam-diam. `maxLength={6}` + cek `<=6` dobel agar paste panjang tidak jebol.
+
+`onPaste` (baris 114) lebih pintar lagi: paste link `https://.../join?room=K7P2MA&x=1` → `extractRoomCodeFromUrl` di `page.tsx:96-100` ambil 6 digit via regex `/\b\d{6}\b/` — tapi perhatikan, regex itu cuma cocok digit murni. Kalau kode Host ada huruf (misal `K7P2MA`), paste link tidak akan ke-extract dan input tetap kosong. Itu keterbatasan nyata kode ini, bukan fitur.
+
+Styling `font-mono tracking-wider text-center text-xl` sengaja agar kode terbaca seperti kode voucher, bukan seperti paragraf.
+
+</Accordion>
+
+<Accordion title="Tombol SCAN di sebelah label — bukan hiasan">
+
+**Kode yang dibahas:** baris 95-102.
+
+Tombol ini putih kecil dengan `<Camera className="h-4 w-4">`. Kliknya tidak scan sendiri — ia cuma panggil `onScan` → `page.tsx:326 setShowScanner(true)` → baru `<QRScanner>` dari `html5-qrcode` yang buka kamera.
+
+Hasil scan kembali lewat `handleQRScan` di `page.tsx:249`: ekstrak kode → `setRoomCode` → langsung `handleJoinRoom` tanpa perlu klik GABUNG lagi. Jadi SCAN = isi + submit sekaligus, sedangkan ketik manual = isi dulu, submit belakangan.
+
+Kalau kamera ditolak browser, tidak ada error merah di sini — Player tinggal ketik manual. Itu fallback yang disengaja.
+
+</Accordion>
+
+<Accordion title="Blok avatar: PILIH AVATAR — grid dari file lain">
+
+**Kode yang dibahas:** baris 131-142.
+
+File ini tidak menggambar satu pun avatar. Ia cuma sediakan kotak putih + panggil AvatarSelector dengan tiga props: selectedAvatar, onAvatarSelect, externalAvatar. Gambar gridnya ada di components/join/avatar-selector.tsx.
+
+Props externalAvatar dipakai agar foto Google muncul sebagai opsi pertama di grid. Klik salah satu → onAvatarSelect → page.tsx baris 327 set avatar + tandai userChangedAvatar agar tidak ditimpa lagi.
+
+</Accordion>
+
+<Accordion title="Tombol hijau + 2 box merah — beda merah beda arti">
+
+**Kode yang dibahas:** baris 119-152.
+
+Dua box merah kelihatan sama tapi sumbernya beda:
+- `roomCodeError` (baris 119): masalah format lokal — contoh `Kode ruang harus diisi` dari `page.tsx:129`. Muncul tanpa perlu internet.
+- `roomError` (baris 124): masalah server — `Ruang tidak ditemukan`, `Game sudah dimulai`, `Anda tidak terdaftar...` dari `page.tsx:142-158`. Butuh `roomManager.getRoom()` gagal dulu.
+
+Tombol hijau baris 145:
+```tsx
+disabled={isJoining || !roomCode.trim()}
+{isJoining ? "BERGABUNG..." : "GABUNG RUANG"}
+```
+- Kosong → mati (abu, tidak bisa klik).
+- Terisi → hijau `bg-green-500 hover:scale-105`.
+- Diklik → `isJoining=true` → teks jadi `BERGABUNG...` + mati lagi agar tidak double-submit. Pengaman ganda ada di `page.tsx:112 isJoiningRef`.
+
+</Accordion>
+</Accordions>
+
+<Callout title="Cara baca file ini">
+Jangan baca dari atas ke bawah. Baca dari tombol hijau ke atas: tombol panggil `onJoin` → `onJoin` butuh `roomCode` → `roomCode` berasal dari input + paste + scan. Kalau tombol tidak aktif, telusuri ke atas: pasti `roomCode` kosong atau `isJoining` nyangkut.
+</Callout>
+
+---
+
+## 3. Uji Sesuai Perilaku Form Ini
+
+<Tabs items={['Saringan Ketikan', 'Dua Merah', 'Tombol Mati-Hidup']}>
+<Tab value="Saringan Ketikan">
+1. Klik input, ketik `ab! 12cd34ef` → harus jadi `AB12CD` (maks 6, simbol hilang, upper)
+2. Paste link panjang berisi 6 digit → terisi 6 digit saja
+3. Paste kode huruf campur misal `K7P2MA` sebagai link → tidak terisi (keterbatasan regex digit-only, catat sebagai bug untuk diperbaiki)
+</Tab>
+<Tab value="Dua Merah">
+1. Kosongkan input, klik GABUNG (kalau bisa) → harus `roomCodeError`: *Kode ruang harus diisi*
+2. Isi kode ngawur `ZZZZZZ`, klik GABUNG → harus `roomError`: *Ruang tidak ditemukan*
+3. Perhatikan: error pertama tanpa loading, error kedua ada jeda loading karena panggil Supabase
+</Tab>
+<Tab value="Tombol Mati-Hidup">
+1. Kosong → tombol mati, hover tidak membesar
+2. Isi 1 huruf → langsung hidup hijau
+3. Klik 2x cepat → tetap 1 request (karena `isJoiningRef`), teks berubah jadi `BERGABUNG...`
+</Tab>
+</Tabs>
+
+---
+
+## 4. Bangun Sendiri
+
+<Steps>
+<Step>
+### Salin file + pastikan 4 import ada
+Buat `app/join/components/join-card.tsx` paste Bagian 5. Wajib ada: `components/ui/button,input,label`, `components/join/avatar-selector.tsx`, `components/player/player-name.tsx`. Tanpa `AvatarSelector`, grid avatar bolong.
+</Step>
+<Step>
+### Colok 11 props dari page.tsx
+Salin blok JoinCard dari page.tsx baris 316-329. Yang paling sering lupa: onPaste untuk tempel link dan profileAvatarUrl untuk foto Google. Hilang satu → SCAN/paste atau foto Google mati.
+</Step>
+</Steps>
+
+---
+
+## 5. Kode Lengkap
 
 #### app/join/components/join-card.tsx
 
@@ -157,3 +315,16 @@ export function JoinCard({
   )
 }
 ```
+
+---
+
+## 5. Verifikasi Visual
+
+<Callout title="✅ Checkpoint form ini">
+- [ ] Judul putih miring 1°, kartu ungu bayangan miring di belakang
+- [ ] Ketik simbol → hilang sendiri, maksimal 6 huruf kapital
+- [ ] Kosong → tombol mati; isi → hijau hidup; klik → `BERGABUNG...`
+- [ ] Kode ngawur → box merah server; kode kosong → box merah format (teks beda)
+</Callout>
+
+Lanjut: [JoinLoadingScreen](/docs/frontend/join/join-loading-screen) — layar putar saat auth / auto-join.
