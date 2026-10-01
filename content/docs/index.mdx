@@ -6,6 +6,7 @@ description: Mengenal arsitektur Memory Game — stack teknologi, alur game, dan
 
 
 import { Callout } from 'fumadocs-ui/components/callout';
+import { MemoryCards } from '@/components/memory-cards';
 
 # Overview & Arsitektur
 
@@ -37,27 +38,52 @@ Fitur wajib yang dibangun: room multiplayer real-time, join via kode 6-digit & Q
 
 ## Aset Game: Kartu Memori
 
-Mini game memory memakai **10 kartu tema hewan** (`.webp` di `public/memogame/`). Setiap kartu dipasangkan berpasangan; pemain membuka dua kartu dan mencocokkan gambar yang sama. Jumlah kartu yang harus dicocokkan tergantung `gameMode`: 12 (mudah), 16 (sedang), 20 (sulit).
+Mini game memory memakai **10 kartu tema hewan** (`.webp` di `public/memogame/`). Setiap kartu dipasangkan berpasangan; pemain membuka dua kartu dan mencocokkan gambar yang sama. Jumlah kartu yang dipakai tergantung `gameMode`: 12 (mudah = 6 pasang), 16 (sedang = 8 pasang), 20 (sulit = 10 pasang).
 
-![Kartu memori — cat](/memogame/cat.webp)
+### Galeri 10 aset (rapi per nama file)
 
-![Kartu memori — cow](/memogame/cow.webp)
-
-![Kartu memori — crab](/memogame/crab.webp)
-
-![Kartu memori — fox](/memogame/fox.webp)
-
-![Kartu memori — jellyfish](/memogame/jellyfish.webp)
-
-![Kartu memori — koala](/memogame/koala.webp)
-
-![Kartu memori — parrot](/memogame/parrot.webp)
-
-![Kartu memori — penguin](/memogame/penguin.webp)
-
-![Kartu memori — sea-turtle](/memogame/sea-turtle.webp)
-
-![Kartu memori — whale](/memogame/whale.webp)
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 my-6">
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/cat.webp" alt="Kartu memori — cat" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">cat <span className="text-fd-muted-foreground">cat.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/cow.webp" alt="Kartu memori — cow" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">cow <span className="text-fd-muted-foreground">cow.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/crab.webp" alt="Kartu memori — crab" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">crab <span className="text-fd-muted-foreground">crab.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/fox.webp" alt="Kartu memori — fox" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">fox <span className="text-fd-muted-foreground">fox.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/jellyfish.webp" alt="Kartu memori — jellyfish" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">jellyfish <span className="text-fd-muted-foreground">jellyfish.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/koala.webp" alt="Kartu memori — koala" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">koala <span className="text-fd-muted-foreground">koala.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/parrot.webp" alt="Kartu memori — parrot" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">parrot <span className="text-fd-muted-foreground">parrot.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/penguin.webp" alt="Kartu memori — penguin" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">penguin <span className="text-fd-muted-foreground">penguin.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/sea-turtle.webp" alt="Kartu memori — sea-turtle" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">sea-turtle <span className="text-fd-muted-foreground">sea-turtle.webp</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/whale.webp" alt="Kartu memori — whale" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">whale <span className="text-fd-muted-foreground">whale.webp</span></figcaption>
+  </figure>
+</div>
 
 Daftar lengkap dipakai langsung oleh komponen `MemoryGame` di `components/game/memory-game.tsx` dan animasi kartu jatuh di `components/home/falling-pixel-cards.tsx`.
 
