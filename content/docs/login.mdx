@@ -11,7 +11,7 @@ Bab ini berisi versi **minimal dan fungsional** login memakai **Supabase Auth** 
 
 ## 1. Client Supabase — `lib/supabase.ts`
 
-Client browser dipakai di halaman login dan callback. Cukup `createBrowserClient` dari `@supabase/ssr` dengan dua env yang sudah disiapkan di bab [Setup](/docs/memory-game/setup/supabase):
+Client browser dipakai di halaman login dan callback. Cukup `createBrowserClient` dari `@supabase/ssr` dengan dua env yang sudah disiapkan di bab [Setup](/docs/setup):
 
 ```ts
 import { createBrowserClient } from "@supabase/ssr"
@@ -153,7 +153,7 @@ export default function AuthCallback() {
 
 ## 4. Setup Supabase (wajib untuk Google OAuth)
 
-Tabel `profiles` sudah dibuat otomatis oleh trigger saat signup (skrip `26_create_users_profile_table.sql` sudah dijalankan di bab [Setup](/docs/memory-game/setup/supabase)). Yang tersisa di dashboard:
+Tabel `profiles` sudah dibuat otomatis oleh trigger saat signup (skrip `26_create_users_profile_table.sql` sudah dijalankan di bab [Setup](/docs/setup)). Yang tersisa di dashboard:
 
 1. **Supabase Dashboard → Authentication → Providers → Google** → Enable, lalu isi **Client ID** dan **Client Secret** dari [Google Cloud Console](https://console.developers.google.com/) (buat **OAuth 2.0 Client ID** tipe *Web application*).
 2. Tambahkan **redirect URL** di Google Cloud Console:

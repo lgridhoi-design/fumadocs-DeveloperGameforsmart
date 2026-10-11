@@ -7,6 +7,18 @@ export function baseOptions(): BaseLayoutProps {
       // JSX supported
       title: appName,
     },
+    links: [
+      {
+        text: 'Developer',
+        url: '/docs',
+        active: 'nested-url',
+      },
+      {
+        text: 'Panduan Pemain',
+        url: '/user',
+        active: 'nested-url',
+      },
+    ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

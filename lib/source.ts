@@ -1,11 +1,24 @@
 import { llms, loader } from 'fumadocs-core/source';
 import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
-import { docsContentRoute, docsImageRoute, docsRoute } from './shared';
+import { docsContentRoute, docsImageRoute, docsRoute, userRoute } from './shared';
 import { defineDocs } from 'fumadocs-mdx/macro';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
 
 const docs = defineDocs({
   dir: 'content/docs',
+  docs: {
+    schema: pageSchema,
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
+  },
+  meta: {
+    schema: metaSchema,
+  },
+});
+
+const userDocs = defineDocs({
+  dir: 'content/user',
   docs: {
     schema: pageSchema,
     postprocess: {
@@ -24,7 +37,19 @@ export const source = loader({
   plugins: [lucideIconsPlugin()],
 });
 
+export const userSource = loader({
+  baseUrl: userRoute,
+  source: userDocs.toFumadocsSource(),
+  plugins: [lucideIconsPlugin()],
+});
+
 export const docsLlms = llms(source, {
+  renderPage: async (page) => `# ${page.data.title} (${page.url})
+
+${await page.data.getText('processed')}`,
+});
+
+export const userLlms = llms(userSource, {
   renderPage: async (page) => `# ${page.data.title} (${page.url})
 
 ${await page.data.getText('processed')}`,

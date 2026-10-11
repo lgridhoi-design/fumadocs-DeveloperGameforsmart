@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import {
-  Rocket,
-  Target,
   FolderTree,
   Database,
   Server,
@@ -11,8 +9,9 @@ import {
   Globe,
   LogIn,
   ArrowRight,
-  Sparkles,
   Zap,
+  Code2,
+  Gamepad2,
 } from 'lucide-react';
 import { MemoryCards } from '@/components/memory-cards';
 
@@ -129,39 +128,40 @@ export default function HomePage() {
           backend, autentikasi, sampai deployment.
         </p>
 
-        {/* Action Buttons */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        {/* Role Selector — Developer atau User */}
+        <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             href="/docs"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-600/25 transition-all hover:opacity-95 hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/60 via-[#18162c]/90 to-neutral-900/80 p-5 text-left shadow-xl shadow-indigo-950/30 transition-all hover:scale-[1.02] hover:border-indigo-400/60"
           >
-            <Rocket className="size-4" />
-            Mulai Bangun Game
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-950/80 transition-transform group-hover:scale-110">
+              <Code2 className="size-6 text-indigo-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">Developer</h3>
+                <ArrowRight className="size-4 text-indigo-300 transition-transform group-hover:translate-x-1" />
+              </div>
+            </div>
           </Link>
           <Link
-            href="/docs/frontend"
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-700/60 bg-neutral-900/70 px-4.5 py-2.5 text-sm font-medium text-fd-foreground backdrop-blur-md transition-all hover:bg-neutral-800 hover:border-neutral-500"
+            href="/user"
+            className="group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 via-[#112425]/90 to-neutral-900/80 p-5 text-left shadow-xl shadow-emerald-950/30 transition-all hover:scale-[1.02] hover:border-emerald-400/60"
           >
-            <Target className="size-4 text-purple-400" />
-            Lihat Kode Frontend
-          </Link>
-          <Link
-            href="/docs/setup"
-            className="inline-flex items-center gap-2 rounded-xl border border-neutral-700/60 bg-neutral-900/70 px-4.5 py-2.5 text-sm font-medium text-fd-foreground backdrop-blur-md transition-all hover:bg-neutral-800 hover:border-neutral-500"
-          >
-            <Globe className="size-4 text-emerald-400" />
-            Gambaran Umum
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-950/80 transition-transform group-hover:scale-110">
+              <Gamepad2 className="size-6 text-emerald-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">User</h3>
+                <ArrowRight className="size-4 text-emerald-300 transition-transform group-hover:translate-x-1" />
+              </div>
+            </div>
           </Link>
         </div>
 
         {/* Memory Cards Interactive Visual Banner */}
         <div className="mt-12 w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4 backdrop-blur-md shadow-2xl">
-          <div className="mb-3 flex items-center justify-between px-1 text-xs text-fd-muted-foreground">
-            <span className="flex items-center gap-1.5 font-medium text-neutral-300">
-              <Sparkles className="size-3.5 text-amber-400" /> Live Mini Game Preview
-            </span>
-            <span className="text-[11px] text-neutral-500">Interactive Memory Cards</span>
-          </div>
           <MemoryCards />
         </div>
       </section>

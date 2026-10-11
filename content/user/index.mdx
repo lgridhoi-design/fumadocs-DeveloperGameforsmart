@@ -1,0 +1,138 @@
+---
+title: Dashboard Pemain
+icon: LayoutDashboard
+description: Mulai bermain MemoryQuiz — pilih peranmu sebagai Host atau Player, pelajari mekanik, dan gabung ke sesi dalam hitungan detik.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Selamat Datang, Pemain! 🎮
+
+Ini adalah **dashboard panduan pemain** MemoryQuiz — game **Puzzle - Memory** tempat kamu mencocokkan kartu untuk membuka kuis tersembunyi.
+
+Bisa dimainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com).
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-6">
+  <img src="/window/dashboard.png" alt="Dashboard MemoryQuiz — tombol BUAT untuk Host dan GABUNG untuk Player" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan awal setelah login — Host pilih BUAT, Player pilih GABUNG</figcaption>
+</figure>
+
+<Callout title="Baru pertama kali main?">
+  Ikuti alur 3 langkah di bawah — total waktu persiapan kurang dari 1 menit.
+</Callout>
+
+---
+
+## Pilih Peranmu
+
+<Cards>
+  <Card
+    icon="Crown"
+    title="Saya Host — Buat Sesi"
+    description="Buat room, pilih kuis, bagikan Room Code 6-digit, dan pantau Live Leaderboard."
+    href="/user/memoryquiz/host"
+  />
+  <Card
+    icon="User"
+    title="Saya Player — Gabung Game"
+    description="Masukkan Room Code, tunggu di Lobby, cocokkan kartu dan jawab kuis."
+    href="/user/memoryquiz/player"
+  />
+  <Card
+    icon="Puzzle"
+    title="Mekanik & Skor"
+    description="Pahami fase Observasi → Matchmaking → Quiz, plus cara skor dihitung."
+    href="/user/memoryquiz/mekanik"
+  />
+  <Card
+    icon="LogIn"
+    title="Cara Login"
+    description="Masuk dengan Google atau Email/Username sebelum bermain."
+    href="/user/memoryquiz#login"
+  />
+</Cards>
+
+---
+
+## Mulai dalam 3 Langkah
+
+<Steps>
+<Step>
+
+### 1. Login
+Buka [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com). Klik **Continue with Google** atau isi **Email / Username + Password**, lalu **LOGIN**.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/live/login-live.png" alt="Halaman login MemoryQuiz versi live" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Halaman login — pilih Google atau Email/Username</figcaption>
+</figure>
+
+</Step>
+<Step>
+
+### 2. Buat atau Gabung
+**Host:** klik **CREATE GAME** → pilih kuis → bagikan Room Code.
+**Player:** cari **Join Game** → masukkan 6-digit kode dari Host.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/join.png" alt="Halaman Join Game — masukkan Room Code 6 digit" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Player masukkan 6-digit Room Code di halaman Join Game</figcaption>
+</figure>
+
+</Step>
+<Step>
+
+### 3. Main & Menang
+Cocokkan sepasang kartu yang sama untuk membuka soal, lalu jawab cepat dan tepat untuk naik ke puncak leaderboard!
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/kuisGame.png" alt="Gameplay MemoryQuiz — cocokkan kartu untuk membuka kuis" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Cocokkan kartu → soal terbuka → jawab untuk dapat skor</figcaption>
+</figure>
+
+</Step>
+</Steps>
+
+---
+
+## Sekilas Aturan Main
+
+| Fase | Yang Dilakukan | Tips |
+| --- | --- | --- |
+| 👀 Observasi | Hafalkan posisi kartu saat sempat terbuka | Fokus ke 2–3 pasang dulu |
+| 🃏 Matchmaking | Balik 2 kartu, cocokkan gambar yang sama | Jangan asal klik — miss mengurangi bonus |
+| ❓ Quiz | Jawab 1 dari 4 opsi (A–D) secepat mungkin | Kecepatan + ketepatan = skor maksimal |
+
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/playGame.png" alt="Fase mencocokkan kartu memori" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Fase Matchmaking — balik 2 kartu yang sama</figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/playerResult.png" alt="Layar hasil player — peringkat dan skor akhir" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Layar Result — peringkat, skor, dan akurasi</figcaption>
+  </figure>
+</div>
+
+> Detail lengkap ada di [Mekanik & Tingkat Kesulitan](/user/memoryquiz/mekanik).
+
+---
+
+## Butuh Bantuan?
+
+<Cards>
+  <Card
+    icon="CircleHelp"
+    title="Panduan Host"
+    description="Langkah membuat sesi dari nol sampai START GAME."
+    href="/user/memoryquiz/host"
+  />
+  <Card
+    icon="Gamepad2"
+    title="Panduan Player"
+    description="Cara gabung room dan menjawab soal di balik kartu."
+    href="/user/memoryquiz/player"
+  />
+</Cards>

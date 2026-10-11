@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RotateCw, Sparkles } from 'lucide-react';
+import { RotateCw } from 'lucide-react';
 
 const ALL_MEMO_IMAGES = [
   { src: '/memogame/cat.webp', alt: 'Kartu Kucing' },
@@ -86,7 +86,7 @@ export function MemoryCards() {
     <div className="w-full">
       <div className="mb-2.5 flex items-center justify-between text-xs text-fd-muted-foreground">
         <span className="flex items-center gap-1.5 font-medium text-purple-300">
-          <Sparkles className="size-3.5 text-amber-400" /> Click cards to flip open!
+          Click cards to flip open!
         </span>
         <button
           onClick={shuffleCards}
@@ -107,9 +107,8 @@ export function MemoryCards() {
             className="group relative aspect-square w-full cursor-pointer focus:outline-none [perspective:1000px]"
           >
             <div
-              className={`relative size-full rounded-xl transition-all duration-500 [transform-style:preserve-3d] shadow-md ${
-                card.isFlipped ? '[transform:rotateY(180deg)]' : ''
-              }`}
+              className={`relative size-full rounded-xl transition-all duration-500 [transform-style:preserve-3d] shadow-md ${card.isFlipped ? '[transform:rotateY(180deg)]' : ''
+                }`}
             >
               {/* Front side (Closed card back) */}
               <div

@@ -1,11 +1,5 @@
 {
   "title": "Setup",
   "icon": "Settings",
-  "pages": [
-    "index",
-    "nextjs",
-    "tailwind",
-    "supabase",
-    "struktur-folder"
-  ]
+  "pages": ["index", "struktur-folder"]
 }

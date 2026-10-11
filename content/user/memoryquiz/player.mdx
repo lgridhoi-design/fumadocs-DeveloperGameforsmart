@@ -1,0 +1,121 @@
+---
+title: Panduan Player
+icon: User
+description: Cara bergabung dan bermain di MemoryQuiz sebagai player — dari Join Game sampai menjawab kuis.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+Sebagai **Player**, tugas utamamu sederhana: **gabung sesi → hafalkan kartu → cocokkan → jawab cepat dan benar!**
+
+---
+
+## Bergabung ke Game
+
+<Steps>
+
+<Step>
+
+### Buka MemoryQuiz
+
+Buka [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com) dan lakukan **Login** (Google atau Email/Username).
+
+</Step>
+
+<Step>
+
+### Masukkan Room Code
+
+Di halaman utama, cari bagian **Join Game**. Masukkan **6-digit Room Code** dari Host — contoh: `123456`.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/join.png" alt="Halaman Join Game — kolom kode room dan tombol GABUNG" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Ketik kode 6 digit lalu tekan GABUNG</figcaption>
+</figure>
+
+<Callout title="Kode tidak bisa dipakai?">
+  Cek lagi: 6 digit tanpa spasi, sesi belum dimulai (masih Lobby), dan kamu memakai akun yang benar.
+</Callout>
+
+</Step>
+
+<Step>
+
+### Tunggu di Lobby
+
+Setelah berhasil gabung, kamu masuk ke layar **Lobby**. Bersiaplah — game otomatis dimulai saat Host menekan **START GAME**. Jangan keluar / refresh!
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/playerWaittingRoom.png" alt="Ruang tunggu Player — daftar pemain dan tanda ANDA" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tunggu di Lobby — kartumu ditandai ANDA</figcaption>
+</figure>
+
+</Step>
+
+</Steps>
+
+---
+
+## Cara Menjawab Soal
+
+Soal kuis **disembunyikan di balik kartu memori**. Urutannya selalu sama:
+
+### 1. 🃏 Fase Mencocokkan
+Tap/klik dua kartu tertutup untuk membalikkannya. Jika gambarnya sama → pasangan terkunci. Jika beda → keduanya tertutup lagi, hafalkan posisinya!
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/playGame.png" alt="Papan kartu memori — semua kartu tertutup" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Buka 2 kartu — cocok = terkunci, gagal = tertutup lagi</figcaption>
+</figure>
+
+### 2. ❓ Fase Kuis
+Setelah pasangan cocok, **soal otomatis terbuka**. Baca dengan saksama.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/kuisGame.png" alt="Soal kuis dengan 4 opsi jawaban" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Soal terbuka setelah pasangan cocok — pilih A/B/C/D</figcaption>
+</figure>
+
+### 3. ✅ Pilih Jawaban
+Pilih satu dari empat opsi (**A, B, C, D**). Semakin cepat + tepat, semakin besar skor.
+
+| Aksi | Dampak ke Skor |
+| --- | --- |
+| Jawaban benar | + Poin besar (utama) |
+| Jawab cepat | + Bonus kecepatan |
+| Sedikit salah balik kartu | + Bonus memori maksimal |
+| Sering salah balik / lambat | Skor berkurang |
+
+<Callout title="Tips Jago" type="info">
+  Jangan buru-buru klik semua kartu. Hafalkan 2–3 posisi dulu, cocokkan yang yakin, baru eksplor kartu lain. Kehabisan waktu di fase kartu adalah penyebab kalah paling umum!
+</Callout>
+
+---
+
+## Setelah Game Selesai
+
+- Layar **Result** menunjukkan skor akhir dan peringkatmu.
+- Host melihat **Leaderboard** final di layarnya.
+- Untuk main lagi, tunggu Host membuat room baru dan bagikan kode baru.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/playerResult.png" alt="Layar Result Player — peringkat, skor, benar, waktu, akurasi" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Result pribadimu — JUARA, SKOR, BENAR, WAKTU, AKURASI</figcaption>
+</figure>
+
+<Cards>
+  <Card
+    icon="Crown"
+    title="Mau jadi Host?"
+    description="Pelajari cara membuat sesi sendiri."
+    href="/user/memoryquiz/host"
+  />
+  <Card
+    icon="Trophy"
+    title="Detail sistem skor"
+    description="Bedah lengkap perhitungan poin."
+    href="/user/memoryquiz/mekanik"
+  />
+</Cards>

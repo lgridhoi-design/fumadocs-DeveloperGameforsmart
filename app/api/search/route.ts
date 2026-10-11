@@ -1,6 +1,13 @@
-import { source } from '@/lib/source';
-import { createFromSource } from 'fumadocs-core/search/server';
+import { source, userSource } from '@/lib/source';
+import { createSearchAPI } from 'fumadocs-core/search/server';
 
-export const { GET } = createFromSource(source, {
+export const { GET } = createSearchAPI('advanced', {
   language: 'indonesian',
+  indexes: [...source.getPages(), ...userSource.getPages()].map((page) => ({
+    id: page.url,
+    title: page.data.title,
+    description: page.data.description ?? '',
+    url: page.url,
+    structuredData: page.data.structuredData,
+  })),
 });

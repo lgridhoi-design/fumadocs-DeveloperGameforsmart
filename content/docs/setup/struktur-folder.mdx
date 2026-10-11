@@ -74,7 +74,7 @@ memory-game/
 └── .env.local                # Kredensial (tidak di-git)
 ```
 
-> Skema SQL (tabel `sessions`, `participants`, `quizzes` + Realtime + RLS) tidak disimpan sebagai file — dijalankan langsung dari **SQL Editor Supabase**, lihat [Setup → Supabase & Environment](/docs/memory-game/setup/supabase) dan [Database](/docs/memory-game/database).
+> Skema SQL (tabel `sessions`, `participants`, `quizzes` + Realtime + RLS) tidak disimpan sebagai file — dijalankan langsung dari **SQL Editor Supabase**, lihat [Database](/docs/database).
 
 ---
 
@@ -91,7 +91,7 @@ app/player/[roomCode]/result/
 ```
 
 - **Route dinamis** memakai kurung siku `[roomCode]` — dibaca dari `params` di server component. Contoh sumber: `app/host/[roomCode]/lobby/page.tsx`, `app/join/[roomCode]/page.tsx`, `app/player/[roomCode]/quiz/page.tsx`.
-- **`app/api/`** berisi Route Handlers (`route.ts`) — satu-satunya tempat logic server. Di tutorial ini hanya ada 3: `rooms/[roomCode]/join`, `rooms/[roomCode]/heartbeat`, `rooms/[roomCode]/countdown-state` (lihat bab [Backend](/docs/memory-game/backend)).
+- **`app/api/`** berisi Route Handlers (`route.ts`) — satu-satunya tempat logic server. Di tutorial ini hanya ada 3: `rooms/[roomCode]/join`, `rooms/[roomCode]/heartbeat`, `rooms/[roomCode]/countdown-state` (lihat bab [Backend](/docs/backend)).
 - Halaman `host/[roomCode]/page.tsx` **hanya me-re-export** ke `./lobby/page` — diperlukan agar routing Next.js aktif.
 - Layout nested bisa diperluas: `app/player/[roomCode]` bisa punya `layout.tsx` sendiri kalau perlu header/shell bersama.
 
@@ -135,7 +135,7 @@ Seluruh logic game & akses database terkonsentrasi di `lib/` (client-side, dipak
 | `server-time.ts` / `timer-utils.ts` | Waktu sinkron lintas device |
 | `utils.ts` | `cn()` dari shadcn |
 
-Detail masing-masing di bab [Frontend — Pola Umum](/docs/memory-game/frontend) dan [Backend](/docs/memory-game/backend).
+Detail masing-masing di bab [Frontend](/docs/frontend) dan [Backend](/docs/backend).
 
 ---
 
@@ -150,7 +150,7 @@ Detail masing-masing di bab [Frontend — Pola Umum](/docs/memory-game/frontend)
 ## `public/` — Aset & Build PWA
 
 - Font & gambar kartu memori adalah **konten game** (di-render langsung via `<img>` atau CSS `background-image`).
-- `sw.js`, `workbox-*.js`, `web-app-manifest-*.png` **bukan ditulis manual** — dihasilkan `next-pwa` saat `npm run build`. Jangan dihapus dari git bila menjadi output rutin (lih. [Deploy](/docs/memory-game/deploy)).
+- `sw.js`, `workbox-*.js`, `web-app-manifest-*.png` **bukan ditulis manual** — dihasilkan `next-pwa` saat `npm run build`. Jangan dihapus dari git bila menjadi output rutin (lih. [Deploy](/docs/deploy)).
 
 <Callout title="Tips">
 Gunakan gambar kartu memori berformat `.webp` dan ukuran kecil (mis. ~512px) karena dirender berulang dalam matrix kartu; hindari ukuran file besar agar animasi flip tetap 60fps.
@@ -158,4 +158,4 @@ Gunakan gambar kartu memori berformat `.webp` dan ukuran kecil (mis. ~512px) kar
 
 ---
 
-Struktur lengkap sudah siap. Berikutnya tinggal mengisi logikanya: [Frontend](/docs/memory-game/frontend) → [Database](/docs/memory-game/database) → [Backend](/docs/memory-game/backend) → [Login](/docs/memory-game/login) → [Deploy](/docs/memory-game/deploy).
+Struktur lengkap sudah siap. Berikutnya tinggal mengisi logikanya: [Frontend](/docs/frontend) → [Database](/docs/database) → [Backend](/docs/backend) → [Login](/docs/login) → [Deploy](/docs/deploy).

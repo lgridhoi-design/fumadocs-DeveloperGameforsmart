@@ -1,0 +1,96 @@
+---
+title: MemoryQuiz
+icon: Puzzle
+description: Pengenalan game MemoryQuiz — Puzzle Memory tempat kartu cocok membuka kuis tersembunyi.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# MemoryQuiz 🧩
+
+MemoryQuiz adalah game **Puzzle - Memory** — latih daya ingat visual sambil menguji pengetahuan. Cocokkan **dua kartu yang sama** untuk membuka dan menjawab **kuis tersembunyi** di baliknya.
+
+Mainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com).
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-6">
+  <img src="/window/kuisGame.png" alt="Papan MemoryQuiz — kartu memori yang harus dicocokkan" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Papan permainan — semua kartu tertutup, cocokkan pasangan yang sama</figcaption>
+</figure>
+
+<Cards>
+  <Card
+    icon="Crown"
+    title="Panduan Host"
+    description="Buat sesi, pilih kuis, bagikan Room Code."
+    href="/user/memoryquiz/host"
+  />
+  <Card
+    icon="User"
+    title="Panduan Player"
+    description="Gabung room dan cara menjawab soal."
+    href="/user/memoryquiz/player"
+  />
+  <Card
+    icon="Trophy"
+    title="Mekanik & Skor"
+    description="Alur permainan dan sistem penilaian."
+    href="/user/memoryquiz/mekanik"
+  />
+</Cards>
+
+---
+
+## Cara Bermain Sekilas
+
+<Steps>
+<Step>
+
+### Cocokkan Kartu
+Tap/klik dua kartu tertutup. Kalau gambarnya sama, pasangan terkunci dan soal terbuka.
+
+</Step>
+<Step>
+
+### Jawab Kuis
+Soal hanya muncul setelah pasangan cocok. Pilih satu dari empat opsi (A, B, C, D).
+
+</Step>
+<Step>
+
+### Kumpulkan Skor
+Skor = ketepatan jawaban + kecepatan menjawab + sedikit kesalahan membalik kartu. Naik ke puncak Live Leaderboard!
+
+</Step>
+</Steps>
+
+---
+
+## Login
+
+Sebelum bermain, kamu perlu login. Halaman login muncul otomatis saat membuka MemoryQuiz.
+
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/live/login-live.png" alt="Login MemoryQuiz di desktop" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan desktop</figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/live/login-live-mobile.png" alt="Login MemoryQuiz di HP" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan mobile</figcaption>
+  </figure>
+</div>
+
+| Metode | Cara |
+| --- | --- |
+| 🔵 Google | Klik **Continue with Google** dan pilih akun Google yang terdaftar |
+| 🔑 Email / Username | Isi **Email or Username** + **Password**, lalu klik **LOGIN** |
+
+<Callout title="Penting" type="warn">
+  Jika ikut sesi kompetisi resmi, pastikan memakai akun yang sudah didaftarkan penyelenggara (Host). Akun lain bisa ditolak masuk room.
+</Callout>
+
+<Callout title="Lupa password?">
+  Hubungi Host/penyelenggara untuk reset — tidak ada reset mandiri di dalam game.
+</Callout>

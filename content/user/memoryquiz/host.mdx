@@ -1,0 +1,146 @@
+---
+title: Panduan Host
+icon: Crown
+description: Cara membuat dan mengelola sesi MemoryQuiz sebagai host — dari Create Game sampai Live Leaderboard.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+Sebagai **Host**, kamu bertugas membuat sesi, memilih kuis, membagikan room code, memulai game, dan memantau jalannya pertandingan.
+
+<Callout title="Checklist sebelum mulai">
+  Sudah login • Sudah siapkan kuis • Koneksi stabil • Peserta sudah standby dengan kode.
+</Callout>
+
+---
+
+## Membuat Sesi
+
+<Steps>
+
+<Step>
+
+### Buka MemoryQuiz
+
+Buka [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com) dan pastikan sudah login dengan akun GameForSmart.
+
+</Step>
+
+<Step>
+
+### Klik Create Game
+
+Di halaman utama (dashboard), klik tombol besar **CREATE GAME** untuk membuat room baru. Tunggu sampai Room Code 6-digit muncul — contoh: `123456`.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/dashboard.png" alt="Dashboard — tombol BUAT untuk membuat room baru" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Klik BUAT di dashboard untuk membuat room</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Pilih Quiz
+
+Kamu akan diarahkan ke halaman **Select Quiz**:
+
+- Gunakan kolom **Search** untuk mencari kuis berdasarkan judul.
+- Klik **Select** pada kuis yang diinginkan.
+- Cek jumlah soal & estimasi durasi sebelum lanjut.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/selectKuis.png" alt="Halaman Select Quiz — daftar kuis siap pakai" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Cari kuis lalu klik Select</figcaption>
+</figure>
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/KuisDetail.png" alt="Dialog detail kuis — judul, jumlah soal, dan tombol lanjut" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Cek detail kuis sebelum lanjut ke pengaturan</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Bagikan Room Code ke Peserta
+
+Setelah kuis dipilih, kamu masuk ke **Lobby**. Di sini terlihat **Room Code**:
+
+- Bacakan / tampilkan di layar / bagikan via chat.
+- Pastikan peserta mengetik kode dengan benar (6 digit, tanpa spasi).
+- Tunggu daftar peserta penuh di Lobby.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/hostWaitingRoom.png" alt="Lobby Host — Room Code dan daftar peserta" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Bagikan Room Code dengan SALIN atau BAGIKAN</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Mulai Sesi
+
+Jika semua peserta sudah masuk dan siap, klik **START GAME**. Hitung mundur berjalan dan game dimulai otomatis di semua device.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/countdount.png" alt="Countdown 10 detik yang sinkron di semua device" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Countdown 10–1 berjalan serentak, lalu kuis dimulai</figcaption>
+</figure>
+
+</Step>
+
+</Steps>
+
+---
+
+## Memantau Sesi (Saat Game Berlangsung)
+
+Saat game berjalan, layar Host menampilkan **Live Leaderboard** yang diperbarui real-time:
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/host.png" alt="Monitor Host — kartu tiap pemain dan fasenya" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Monitor Host — fase KUIS / GAME / SELESAI tiap pemain</figcaption>
+</figure>
+
+| Yang Terlihat | Artinya |
+| --- | --- |
+| 🏆 Peringkat | Urutan skor tertinggi saat ini |
+| ✅ Jawaban benar | Pemain menjawab tepat |
+| 🃏 Match rate | Seberapa efisien pemain mencocokkan kartu |
+| ⏱️ Waktu | Sisa waktu / kecepatan menjawab |
+
+<Callout title="Tips Host" type="info">
+  Jangan refresh halaman saat game berjalan — leaderboard akan terputus sementara. Jika ada pemain tertinggal, minta mereka tetap di Lobby, jangan buat room baru.
+</Callout>
+
+---
+
+## Setelah Selesai
+
+1. Tunggu status **Finished** — leaderboard final terkunci.
+2. Umumkan pemenang dari layar Host.
+3. Jika perlu sesi baru, klik **Create Game** lagi (kode baru akan dibuat).
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/hostRessult.png" alt="Leaderboard akhir Host — podium juara 1-3" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Leaderboard final — podium juara + tombol ULANGI / STATISTIK / HOME</figcaption>
+</figure>
+
+<Cards>
+  <Card
+    icon="User"
+    title="Lihat sisi Player"
+    description="Pahami apa yang dilihat peserta agar mudah memandu."
+    href="/user/memoryquiz/player"
+  />
+  <Card
+    icon="Trophy"
+    title="Pahami sistem skor"
+    description="Jelaskan ke peserta bagaimana skor dihitung."
+    href="/user/memoryquiz/mekanik"
+  />
+</Cards>

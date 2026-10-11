@@ -1,54 +1,172 @@
 ---
-title: Pengantar Setup
-icon: Layers
-description: Prasyarat dan alur besar fase Setup — dari lingkungan kosong sampai proyek Next.js siap menerima kode game.
+title: Setup
+icon: Settings
+description: Persiapan proyek dari nol — scaffold Next.js 14, Tailwind v4 + shadcn, dan Supabase + .env — sampai `npm run dev` jalan di port 3002.
 ---
-
 
 import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
 
-# Pengantar Setup
+# Setup
 
-Bab ini (dan halaman `Setup/*` di bawahnya) menjelaskan **persiapan proyek dari nol** sebelum satu baris logika game ditulis. Semua angka, daftar package, dan berkas konfigurasi diambil langsung dari `gfs/Memory-Game`.
+Satu halaman untuk seluruh persiapan proyek sebelum logika game ditulis — mengikuti `gfs/Memory-Game`. Target akhir: `npm run dev` jalan di `http://localhost:3002`, `.env.local` terisi, dan 1 project Supabase siap diisi skema di bab [Database](/docs/database).
 
-Tujuan akhir fase Setup: terminal bisa menjalankan `npm run dev`, proyek tampil di `http://localhost:3002`, `.env.local` terisi kredensial, dan **dua** database Supabase sudah punya skema lengkap.
-
----
-
-## Alur Setup
-
-```
-1. Instalasi Next.js      → scaffold TypeScript + App Router (tanpa src/)
-2. Tailwind CSS & styling → Tailwind v4 + shadcn/ui + font + tema
-3. Supabase & .env        → 2 project, kredensial, skema SQL
-4. Struktur folder        → layout direktori proyek yang akan diisi bab berikutnya
-```
-
-| Halaman | Isi |
-| --- | --- |
-| [Instalasi Next.js](/docs/memory-game/setup/nextjs) | `create-next-app`, versi, path alias, port 3002 |
-| [Tailwind CSS & Styling](/docs/memory-game/setup/tailwind) | Tailwind v4, shadcn/ui, fonts, tema pixel |
-| [Supabase & Environment](/docs/memory-game/setup/supabase) | 2 project, `.env.local`, skema SQL A & B |
-| [Struktur Folder](/docs/memory-game/setup/struktur-folder) | Layout `app/`, `components/`, `lib/`, dll. |
-
----
-
-## Prasyarat
-
-- **Node.js 18.x+** (Next.js 14.2.16 memakai React 18; versi Node lama bisa menimbulkan error di beberapa dependency).
-- **npm** (atau `yarn`/`pnpm` — proyek asli punya `package-lock.json` dan `yarn.lock`).
-- **Gmail/Google Account** — untuk membuat 2 project Supabase (dipakai OAuth Google di bab [Login](/docs/memory-game/login), tapi akun sudah dibutuhkan dari sini).
-- **Supabase** — cukup akun gratis; butuh **2 project terpisah**.
-
-<Callout title="Kenapa butuh dua project Supabase?">
-Untuk angkat beban update skor paralel. Satu project menangani auth/quiz/backup (`A`), satu lagi menangani row per pemain dan Realtime (`B`). Penjelasan lengkap ada di [Overview & Arsitektur](/docs/memory-game).
+<Callout title="Prasyarat">
+  **Node.js 18+** • **npm** (proyek asli juga punya `yarn.lock`) • **Akun Google** (untuk Supabase + OAuth di bab [Login](/docs/login)) • **1 project Supabase gratis**.
 </Callout>
 
----
+<Steps>
+<Step>
 
-## Verifikasi Akhir
+### Scaffold Next.js 14
 
-Setelah semua sub-halaman selesai diikuti, seharusnya:
+```bash
+npx create-next-app@14 memory-game \
+  --typescript --tailwind --eslint --app \
+  --no-src-dir --import-alias "@/*"
+```
+
+| Flag | Alasan |
+| --- | --- |
+| `@14` (14.2.16) | Kompatibel dengan `@supabase/ssr` |
+| `--no-src-dir` | `app/`, `components/`, `lib/` di root, bukan `src/` |
+| `--import-alias "@/*"` | Semua import `@/...` mengarah ke root |
+
+Install package inti (sisanya menyusul per bab):
+
+```bash
+npm install next@14.2.16 react@^18 react-dom@^18
+npm install @supabase/supabase-js @supabase/ssr
+npm install zod sonner lucide-react framer-motion
+npm install qrcode.react html5-qrcode
+```
+
+Port **3002** untuk dev & production (`package.json`):
+
+```json
+{ "scripts": { "build": "next build", "dev": "next dev -p 3002", "start": "next start -p 3002" } }
+```
+
+Nilai ini juga dipakai `NEXT_PUBLIC_SITE_URL`. `tsconfig.json` bawaan scaffold sudah benar selama `paths` = `@/*` → `./*`. Opsional seperti proyek asli (`next.config.mjs`):
+
+```js
+const nextConfig = {
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
+}
+```
+
+</Step>
+<Step>
+
+### Tailwind v4 + shadcn/ui
+
+Tailwind v4 **tanpa `tailwind.config.js`** — konfigurasi ditulis di CSS. `autoprefixer` tidak dibutuhkan lagi.
+
+```bash
+npm install -D tailwindcss @tailwindcss/postcss postcss tw-animate-css
+npm install tailwindcss-animate
+```
+
+`postcss.config.mjs` — satu plugin saja:
+
+```js
+const config = { plugins: { '@tailwindcss/postcss': {} } }
+export default config
+```
+
+`app/globals.css` — entry point:
+
+```css
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+```
+
+Font pixel-art (`public/font/`, lalu `@font-face` di awal `globals.css`):
+
+```css
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/font/PressStart2P.ttf') format('truetype');
+  font-display: swap;
+}
+/* Duplikat pola yang sama untuk 'LPMQ Misbah' (teks Arab/RTL) */
+
+:root {
+  --font-pixel: 'Press Start 2P', cursive;
+  --font-system: -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+```
+
+Tema warna (`oklch`, pola shadcn):
+
+```css
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.3 0 0);
+  --primary: oklch(0.65 0.15 45);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+}
+```
+
+Lalu init shadcn (pilih **new-york** • **neutral** • **css variables: yes**) dan pasang komponen game:
+
+```bash
+npx shadcn@latest init
+npx shadcn@latest add button card input label badge slider select dialog
+npx shadcn@latest add alert-dialog separator progress tooltip toast carousel
+```
+
+</Step>
+<Step>
+
+### Supabase & `.env.local`
+
+Buat **1 project** di `supabase.com/dashboard` (mis. `memory-quiz-main`, region terdekat), lalu ambil dari **Settings → API**:
+
+| Kunci | Dipakai untuk |
+| --- | --- |
+| `Project URL` | Endpoint REST/Realtime |
+| `anon / public key` | Dari browser, dibatasi RLS — satu-satunya key yang dipakai tutorial ini |
+
+`.env.local` (diabaikan git):
+
+```plaintext
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3002
+```
+
+`lib/supabase.ts` memakai placeholder agar `npm run build` tidak crash saat env kosong:
+
+```ts
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+```
+
+Tegaskan di `next.config.mjs` agar tersedia saat build:
+
+```js
+env: {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+},
+```
+
+> Skema SQL (`sessions`, `participants`, `quizzes` + Realtime + RLS) **tidak di sini** — jalankan dari SQL Editor mengikuti bab [Database](/docs/database).
+
+</Step>
+<Step>
+
+### Verifikasi
 
 ```bash
 npm install
@@ -56,4 +174,7 @@ npm run build    # tidak boleh ada error
 npm run dev      # buka http://localhost:3002
 ```
 
-Jika `npm run build` gagal di tahap HTML/Shiki atau sejenisnya, cek dulu versi `next`, `react`, dan `tw-animate-css` — sengaja tidak dipakai `latest` agar konsisten dengan proyek asli.
+</Step>
+</Steps>
+
+Lanjut ke [Struktur Folder](/docs/setup/struktur-folder) — peta direktori yang akan diisi di bab berikutnya.

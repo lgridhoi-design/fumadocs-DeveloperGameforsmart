@@ -1,0 +1,122 @@
+---
+title: Mekanik & Tingkat Kesulitan
+icon: Trophy
+description: Penjelasan mekanik MemoryQuiz — fase permainan, sistem skor, dan strategi menang.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+MemoryQuiz menguji dua kecerdasan sekaligus: **memori visual jangka pendek** 🧠 dan **pengetahuan faktual kuis** 📚.
+
+---
+
+## Alur Permainan
+
+### 1. 👀 Fase Observasi
+Di awal putaran (jika diaktifkan sistem), semua kartu sempat terbuka sesaat. Manfaatkan waktu singkat ini untuk menghafal posisi!
+
+- Fokus ke sudut / pola, bukan semua kartu.
+- Ingat 2–3 pasang prioritas.
+
+### 2. 🃏 Fase Matchmaking
+Balik dua kartu yang sama untuk membuka kuis:
+
+- **Cocok** → pasangan terkunci + soal terbuka.
+- **Gagal** → kartu tertutup lagi. Bisa mengurangi bonus / memakan waktu.
+
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/playGame.png" alt="Papan kartu tertutup — fase matchmaking" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Kartu tertutup — cari pasangan yang sama</figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+    <img src="/window/playGame2.png" alt="Soal kuis bergambar dengan zoom" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Pasangan cocok → soal bergambar terbuka</figcaption>
+  </figure>
+</div>
+
+### 3. ❓ Quiz Phase
+Kuis **HANYA** muncul jika pasangan cocok. Jawab 1 dari 4 opsi secepat dan setepat mungkin.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/kuisGame.png" alt="Soal kuis teks dengan 4 opsi dan timer" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Soal teks — ada bar progres dan timer</figcaption>
+</figure>
+
+```
+Observasi → Matchmaking ⇄ Quiz → Selesai → Leaderboard / Result
+```
+
+---
+
+## Sistem Skor
+
+Total skor dihitung dari 3 komponen:
+
+| Komponen | Bobot | Cara Maksimalkan |
+| --- | --- | --- |
+| 🎯 Ketepatan Jawaban | Terbesar | Jawab benar, jangan asal tebak |
+| ⚡ Waktu Kuis | Sedang | Jawab cepat setelah soal terbuka |
+| 🃏 Waktu Memori | Bonus | Sedikit salah balik (missed flip) |
+
+Contoh pola:
+
+- Benar + cepat + 0 miss → **skor maksimal** 🌟
+- Benar + lambat + banyak miss → **skor kecil**
+- Salah → **tidak dapat poin jawaban**, hanya buang waktu
+
+<Callout title="Tips Jago" type="info">
+  Fokus menghafal letak kartu! Pemain sering kalah bukan karena tidak tahu jawaban, tapi karena **kehabisan waktu menemukan pasangan kartunya**.
+</Callout>
+
+---
+
+## Tingkat Kesulitan (Jumlah Kartu)
+
+| Mode | Kartu | Pasangan | Cocok Untuk |
+| --- | --- | --- | --- |
+| 🟢 Mudah | 12 | 6 pasang | Pemula / pemanasan |
+| 🟡 Sedang | 16 | 8 pasang | Kompetisi kelas |
+| 🔴 Sulit | 20 | 10 pasang | Final / turnamen |
+
+Semakin banyak kartu → semakin sulit menghafal, tapi semakin seru!
+
+<div className="grid grid-cols-3 gap-4 my-6">
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/cat.webp" alt="Contoh kartu memori — kucing" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">Mudah <span className="text-fd-muted-foreground">12 kartu</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/fox.webp" alt="Contoh kartu memori — rubah" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">Sedang <span className="text-fd-muted-foreground">16 kartu</span></figcaption>
+  </figure>
+  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card text-center">
+    <img src="/memogame/whale.webp" alt="Contoh kartu memori — paus" className="aspect-square w-full object-cover" loading="lazy" />
+    <figcaption className="px-2 py-2 text-xs font-medium">Sulit <span className="text-fd-muted-foreground">20 kartu</span></figcaption>
+  </figure>
+</div>
+
+---
+
+## Strategi Menang
+
+1. **Petakan dulu** — hafalkan posisi saat observasi, jangan langsung klik acak.
+2. **Kunci yang yakin** — cocokkan pasangan yang sudah dihafal sebelum eksplorasi.
+3. **Jawab tanpa ragu** — kalau sudah yakin, langsung pilih. Keraguan membuang bonus waktu.
+4. **Jaga ritme** — stabil lebih baik daripada cepat tapi banyak miss.
+
+<Cards>
+  <Card
+    icon="User"
+    title="Latihan sebagai Player"
+    description="Terapkan strategi ini langsung di game."
+    href="/user/memoryquiz/player"
+  />
+  <Card
+    icon="Crown"
+    title="Atur sesi sebagai Host"
+    description="Pilih mode kesulitan yang pas untuk peserta."
+    href="/user/memoryquiz/host"
+  />
+</Cards>
