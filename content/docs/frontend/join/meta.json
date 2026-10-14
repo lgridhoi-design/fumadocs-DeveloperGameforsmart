@@ -2,7 +2,6 @@
   "title": "Join",
   "icon": "ScanLine",
   "pages": [
-    "index",
     "room-code",
     "join-card",
     "join-loading-screen",

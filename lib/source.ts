@@ -3,6 +3,7 @@ import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
 import { docsContentRoute, docsImageRoute, docsRoute, userRoute } from './shared';
 import { defineDocs } from 'fumadocs-mdx/macro';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
+import type { Root, Folder } from 'fumadocs-core/page-tree';
 
 const docs = defineDocs({
   dir: 'content/docs',
@@ -42,6 +43,36 @@ export const userSource = loader({
   source: userDocs.toFumadocsSource(),
   plugins: [lucideIconsPlugin()],
 });
+
+/**
+ * Combined page tree: sidebar menampilkan dua grup collapsible
+ * 'Developer' (docs) dan 'User' (user docs) sekaligus.
+ */
+export function getCombinedPageTree(): Root {
+  const docsTree = source.getPageTree();
+  const userTree = userSource.getPageTree();
+
+  const developerFolder: Folder = {
+    type: 'folder',
+    name: 'Developer',
+    defaultOpen: false,
+    collapsible: true,
+    children: docsTree.children,
+  };
+
+  const userFolder: Folder = {
+    type: 'folder',
+    name: 'User',
+    defaultOpen: false,
+    collapsible: true,
+    children: userTree.children,
+  };
+
+  return {
+    name: '',
+    children: [developerFolder, userFolder],
+  };
+}
 
 export const docsLlms = llms(source, {
   renderPage: async (page) => `# ${page.data.title} (${page.url})

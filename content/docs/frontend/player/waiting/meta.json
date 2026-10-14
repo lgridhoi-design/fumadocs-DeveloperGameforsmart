@@ -2,7 +2,6 @@
   "title": "Waiting",
   "icon": "Clock",
   "pages": [
-    "index",
     "waiting-card",
     "types",
     "exit-dialog",

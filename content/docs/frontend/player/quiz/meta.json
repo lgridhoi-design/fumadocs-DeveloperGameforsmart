@@ -2,7 +2,6 @@
   "title": "Quiz",
   "icon": "ListChecks",
   "pages": [
-    "index",
     "quiz-broadcast",
     "quiz-game-view",
     "quiz-load",

@@ -2,9 +2,8 @@
   "title": "Player",
   "icon": "Gamepad2",
   "pages": [
-    "index",
     "waiting",
-    "countdown",
+    "countdown/index",
     "quiz",
     "memory-challenge",
     "result"

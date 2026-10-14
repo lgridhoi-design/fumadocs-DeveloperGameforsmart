@@ -2,7 +2,6 @@
   "title": "Quiz Settings",
   "icon": "SlidersHorizontal",
   "pages": [
-    "index",
     "settings-card",
     "time-limit-select",
     "question-count-select",

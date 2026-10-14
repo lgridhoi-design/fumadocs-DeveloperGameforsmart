@@ -2,7 +2,6 @@
   "title": "Memory Challenge",
   "icon": "Brain",
   "pages": [
-    "index",
     "memory-game-shell",
     "memory-completed-screen"
   ]

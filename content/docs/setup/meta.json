@@ -1,5 +1,5 @@
 {
   "title": "Setup",
   "icon": "Settings",
-  "pages": ["index", "struktur-folder"]
+  "pages": ["struktur-folder"]
 }

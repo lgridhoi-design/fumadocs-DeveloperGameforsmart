@@ -2,7 +2,6 @@
   "title": "Lobby",
   "icon": "DoorOpen",
   "pages": [
-    "index",
     "room-share-card",
     "player-list-card",
     "lobby-dialogs",

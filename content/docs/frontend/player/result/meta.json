@@ -2,7 +2,6 @@
   "title": "Result",
   "icon": "Trophy",
   "pages": [
-    "index",
     "types",
     "result-screens",
     "player-result-card",
