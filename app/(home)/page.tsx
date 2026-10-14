@@ -129,34 +129,20 @@ export default function HomePage() {
         </p>
 
         {/* Role Selector — Developer atau User */}
-        <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
-          <Link
-            href="/docs"
-            className="group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/60 via-[#18162c]/90 to-neutral-900/80 p-5 text-left shadow-xl shadow-indigo-950/30 transition-all hover:scale-[1.02] hover:border-indigo-400/60"
-          >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-950/80 transition-transform group-hover:scale-110">
-              <Code2 className="size-6 text-indigo-300" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Developer</h3>
-                <ArrowRight className="size-4 text-indigo-300 transition-transform group-hover:translate-x-1" />
-              </div>
-            </div>
-          </Link>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/user"
-            className="group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 via-[#112425]/90 to-neutral-900/80 p-5 text-left shadow-xl shadow-emerald-950/30 transition-all hover:scale-[1.02] hover:border-emerald-400/60"
+            className="inline-flex items-center gap-2.5 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/40 transition-all duration-200 hover:bg-violet-500 hover:scale-105 active:scale-95"
           >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-950/80 transition-transform group-hover:scale-110">
-              <Gamepad2 className="size-6 text-emerald-300" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">User</h3>
-                <ArrowRight className="size-4 text-emerald-300 transition-transform group-hover:translate-x-1" />
-              </div>
-            </div>
+            <Gamepad2 className="size-4" />
+            User
+          </Link>
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-2.5 rounded-full border border-neutral-700/80 bg-neutral-800/70 px-5 py-2.5 text-sm font-semibold text-neutral-200 shadow-lg shadow-black/30 backdrop-blur-sm transition-all duration-200 hover:border-neutral-600 hover:bg-neutral-700/80 hover:scale-105 active:scale-95"
+          >
+            <Layers className="size-4 text-neutral-300" />
+            Developer
           </Link>
         </div>
 

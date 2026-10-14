@@ -15,7 +15,7 @@ MemoryQuiz adalah game **Puzzle - Memory** — latih daya ingat visual sambil me
 Mainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com).
 
 <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-6">
-  <img src="/window/kuisGame.png" alt="Papan MemoryQuiz — kartu memori yang harus dicocokkan" className="w-full object-cover" loading="lazy" />
+  <img src="/window/playGame.png" alt="Papan MemoryQuiz — kartu memori yang harus dicocokkan" className="w-full object-cover" loading="lazy" />
   <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Papan permainan — semua kartu tertutup, cocokkan pasangan yang sama</figcaption>
 </figure>
 
@@ -24,19 +24,25 @@ Mainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com).
     icon="Crown"
     title="Panduan Host"
     description="Buat sesi, pilih kuis, bagikan Room Code."
-    href="/user/memoryquiz/host"
+    href="/user/host"
+  />
+  <Card
+    icon="FlaskConical"
+    title="Panduan Try Out"
+    description="Latihan sendiri tanpa peserta — langsung main setelah pilih kuis."
+    href="/user/tryout"
   />
   <Card
     icon="User"
     title="Panduan Player"
     description="Gabung room dan cara menjawab soal."
-    href="/user/memoryquiz/player"
+    href="/user/player"
   />
   <Card
     icon="Trophy"
     title="Mekanik & Skor"
     description="Alur permainan dan sistem penilaian."
-    href="/user/memoryquiz/mekanik"
+    href="/user/mekanik"
   />
 </Cards>
 
@@ -73,12 +79,8 @@ Sebelum bermain, kamu perlu login. Halaman login muncul otomatis saat membuka Me
 
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
   <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
-    <img src="/window/live/login-live.png" alt="Login MemoryQuiz di desktop" className="aspect-video w-full object-cover" loading="lazy" />
-    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan desktop</figcaption>
-  </figure>
-  <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
-    <img src="/window/live/login-live-mobile.png" alt="Login MemoryQuiz di HP" className="aspect-video w-full object-cover" loading="lazy" />
-    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan mobile</figcaption>
+    <img src="/window/login.png" alt="Login MemoryQuiz di desktop" className="aspect-video w-full object-cover" loading="lazy" />
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Tampilan login</figcaption>
   </figure>
 </div>
 
@@ -87,10 +89,3 @@ Sebelum bermain, kamu perlu login. Halaman login muncul otomatis saat membuka Me
 | 🔵 Google | Klik **Continue with Google** dan pilih akun Google yang terdaftar |
 | 🔑 Email / Username | Isi **Email or Username** + **Password**, lalu klik **LOGIN** |
 
-<Callout title="Penting" type="warn">
-  Jika ikut sesi kompetisi resmi, pastikan memakai akun yang sudah didaftarkan penyelenggara (Host). Akun lain bisa ditolak masuk room.
-</Callout>
-
-<Callout title="Lupa password?">
-  Hubungi Host/penyelenggara untuk reset — tidak ada reset mandiri di dalam game.
-</Callout>

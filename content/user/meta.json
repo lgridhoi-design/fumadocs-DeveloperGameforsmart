@@ -1,5 +1,5 @@
 {
   "title": "Panduan Pemain",
   "icon": "Gamepad2",
-  "pages": ["index", "memoryquiz"]
+  "pages": ["index", "memoryquiz", "host", "tryout", "player", "mekanik"]
 }

@@ -14,20 +14,20 @@ MemoryQuiz menguji dua kecerdasan sekaligus: **memori visual jangka pendek** �
 ## Alur Permainan
 
 ### 1. 👀 Fase Observasi
-Di awal putaran (jika diaktifkan sistem), semua kartu sempat terbuka sesaat. Manfaatkan waktu singkat ini untuk menghafal posisi!
+Di awal putaran, semua kartu sempat terbuka sesaat. Manfaatkan waktu singkat ini untuk menghafal posisi!
 
 - Fokus ke sudut / pola, bukan semua kartu.
 - Ingat 2–3 pasang prioritas.
 
-### 2. 🃏 Fase Matchmaking
+### 2. 🃏 Fase Pencocokan
 Balik dua kartu yang sama untuk membuka kuis:
 
 - **Cocok** → pasangan terkunci + soal terbuka.
-- **Gagal** → kartu tertutup lagi. Bisa mengurangi bonus / memakan waktu.
+- **Gagal** → kartu tertutup lagi.
 
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
   <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
-    <img src="/window/playGame.png" alt="Papan kartu tertutup — fase matchmaking" className="aspect-video w-full object-cover" loading="lazy" />
+    <img src="/window/playGame.png" alt="Papan kartu tertutup — fase Pencocokan" className="aspect-video w-full object-cover" loading="lazy" />
     <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Kartu tertutup — cari pasangan yang sama</figcaption>
   </figure>
   <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
@@ -45,7 +45,7 @@ Kuis **HANYA** muncul jika pasangan cocok. Jawab 1 dari 4 opsi secepat dan setep
 </figure>
 
 ```
-Observasi → Matchmaking ⇄ Quiz → Selesai → Leaderboard / Result
+Observasi → Pencocokan ⇄ Quiz → Selesai → Leaderboard / Result
 ```
 
 ---
@@ -54,17 +54,11 @@ Observasi → Matchmaking ⇄ Quiz → Selesai → Leaderboard / Result
 
 Total skor dihitung dari 3 komponen:
 
-| Komponen | Bobot | Cara Maksimalkan |
-| --- | --- | --- |
-| 🎯 Ketepatan Jawaban | Terbesar | Jawab benar, jangan asal tebak |
-| ⚡ Waktu Kuis | Sedang | Jawab cepat setelah soal terbuka |
-| 🃏 Waktu Memori | Bonus | Sedikit salah balik (missed flip) |
-
-Contoh pola:
-
-- Benar + cepat + 0 miss → **skor maksimal** 🌟
-- Benar + lambat + banyak miss → **skor kecil**
-- Salah → **tidak dapat poin jawaban**, hanya buang waktu
+| Komponen | 
+| --- | 
+| 🎯 Ketepatan Jawaban | 
+| ⚡ Waktu Kuis |
+| 🃏 Waktu Memori | 
 
 <Callout title="Tips Jago" type="info">
   Fokus menghafal letak kartu! Pemain sering kalah bukan karena tidak tahu jawaban, tapi karena **kehabisan waktu menemukan pasangan kartunya**.
@@ -103,7 +97,7 @@ Semakin banyak kartu → semakin sulit menghafal, tapi semakin seru!
 
 1. **Petakan dulu** — hafalkan posisi saat observasi, jangan langsung klik acak.
 2. **Kunci yang yakin** — cocokkan pasangan yang sudah dihafal sebelum eksplorasi.
-3. **Jawab tanpa ragu** — kalau sudah yakin, langsung pilih. Keraguan membuang bonus waktu.
+3. **Jawab tanpa ragu** — kalau sudah yakin, langsung pilih. Keraguan membuang waktu.
 4. **Jaga ritme** — stabil lebih baik daripada cepat tapi banyak miss.
 
 <Cards>
@@ -111,12 +105,12 @@ Semakin banyak kartu → semakin sulit menghafal, tapi semakin seru!
     icon="User"
     title="Latihan sebagai Player"
     description="Terapkan strategi ini langsung di game."
-    href="/user/memoryquiz/player"
+    href="/user/player"
   />
   <Card
     icon="Crown"
     title="Atur sesi sebagai Host"
     description="Pilih mode kesulitan yang pas untuk peserta."
-    href="/user/memoryquiz/host"
+    href="/user/host"
   />
 </Cards>

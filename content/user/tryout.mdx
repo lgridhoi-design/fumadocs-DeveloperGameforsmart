@@ -1,0 +1,99 @@
+---
+title: Panduan Try Out
+icon: FlaskConical
+description: Bermain MemoryQuiz sendiri tanpa peserta lain — pilih kuis, atur setelan, dan langsung main.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+**Try Out** adalah mode latihan mandiri. Kamu bermain sendiri — tidak ada room, tidak ada peserta lain. Cocok untuk mencoba kuis sebelum dijadikan sesi resmi.
+
+<Callout title="Perbedaan Try Out vs Host">
+  **Try Out** → langsung main setelah atur setelan, single player.
+  **Host** → masuk Lobby dulu, bagikan Room Code, tunggu peserta.
+</Callout>
+
+---
+
+## Cara Mengakses
+
+<Steps>
+
+<Step>
+
+### Buka Dashboard dan Klik BUAT
+
+Login ke [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com), lalu klik tombol **BUAT** di halaman utama.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/dashboard.png" alt="Dashboard — tombol BUAT" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Klik BUAT di dashboard</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Pilih Kuis
+
+Cari dan klik kuis yang ingin dicoba dari halaman **Select Quiz**.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/selectKuis.png" alt="Halaman Select Quiz" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Pilih kuis yang ingin dicoba</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Pilih TRY OUT di Detail Kuis
+
+Setelah memilih kuis, muncul halaman detail. Pilih **TRY OUT** untuk bermain sendiri (atau **HOST** untuk sesi multiplayer).
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/KuisDetail.png" alt="Detail kuis — tombol TRY OUT dan HOST" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Pilih TRY OUT untuk bermain sendiri</figcaption>
+</figure>
+
+</Step>
+
+<Step>
+
+### Atur Setelan dan Mulai
+
+Atur setelan permainan (tingkat kesulitan, durasi, jumlah soal) — sama seperti mode Host. Setelah selesai, klik **Mulai** dan game langsung dimulai tanpa lobby.
+
+</Step>
+
+</Steps>
+
+---
+
+## Setelah Selesai
+
+Skor dan hasil tetap ditampilkan di akhir permainan — termasuk jumlah jawaban benar, akurasi, dan waktu.
+
+<figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
+  <img src="/window/playerResult.png" alt="Layar hasil Try Out" className="w-full object-cover" loading="lazy" />
+  <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Hasil akhir ditampilkan setelah permainan selesai</figcaption>
+</figure>
+
+---
+
+<Cards>
+  <Card
+    icon="Crown"
+    title="Panduan Host"
+    description="Buat sesi multiplayer dan undang peserta."
+    href="/user/host"
+  />
+  <Card
+    icon="Trophy"
+    title="Mekanik & Skor"
+    description="Pahami cara skor dihitung."
+    href="/user/mekanik"
+  />
+</Cards>

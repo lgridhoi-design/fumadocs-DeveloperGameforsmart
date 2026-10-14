@@ -32,19 +32,25 @@ Bisa dimainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.
     icon="Crown"
     title="Saya Host — Buat Sesi"
     description="Buat room, pilih kuis, bagikan Room Code 6-digit, dan pantau Live Leaderboard."
-    href="/user/memoryquiz/host"
+    href="/user/host"
   />
   <Card
     icon="User"
     title="Saya Player — Gabung Game"
     description="Masukkan Room Code, tunggu di Lobby, cocokkan kartu dan jawab kuis."
-    href="/user/memoryquiz/player"
+    href="/user/player"
+  />
+  <Card
+    icon="FlaskConical"
+    title="Latihan — Try Out"
+    description="Bermain sendiri tanpa peserta. Pilih kuis dan langsung main."
+    href="/user/tryout"
   />
   <Card
     icon="Puzzle"
     title="Mekanik & Skor"
-    description="Pahami fase Observasi → Matchmaking → Quiz, plus cara skor dihitung."
-    href="/user/memoryquiz/mekanik"
+    description="Pahami fase Observasi → Pencocokan → Quiz, plus cara skor dihitung."
+    href="/user/mekanik"
   />
   <Card
     icon="LogIn"
@@ -65,7 +71,7 @@ Bisa dimainkan di [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.
 Buka [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com). Klik **Continue with Google** atau isi **Email / Username + Password**, lalu **LOGIN**.
 
 <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
-  <img src="/window/live/login-live.png" alt="Halaman login MemoryQuiz versi live" className="w-full object-cover" loading="lazy" />
+  <img src="/window/login.png" alt="Halaman login MemoryQuiz versi live" className="w-full object-cover" loading="lazy" />
   <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Halaman login — pilih Google atau Email/Username</figcaption>
 </figure>
 
@@ -74,6 +80,7 @@ Buka [memoryquiz.gameforsmart.com](https://memoryquiz.gameforsmart.com). Klik **
 
 ### 2. Buat atau Gabung
 **Host:** klik **CREATE GAME** → pilih kuis → bagikan Room Code.
+<br></br>
 **Player:** cari **Join Game** → masukkan 6-digit kode dari Host.
 
 <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card my-4">
@@ -102,13 +109,13 @@ Cocokkan sepasang kartu yang sama untuk membuka soal, lalu jawab cepat dan tepat
 | Fase | Yang Dilakukan | Tips |
 | --- | --- | --- |
 | 👀 Observasi | Hafalkan posisi kartu saat sempat terbuka | Fokus ke 2–3 pasang dulu |
-| 🃏 Matchmaking | Balik 2 kartu, cocokkan gambar yang sama | Jangan asal klik — miss mengurangi bonus |
+| 🃏 Pencocokan | Balik 2 kartu, cocokkan gambar yang sama | Jangan asal klik |
 | ❓ Quiz | Jawab 1 dari 4 opsi (A–D) secepat mungkin | Kecepatan + ketepatan = skor maksimal |
 
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
   <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
     <img src="/window/playGame.png" alt="Fase mencocokkan kartu memori" className="aspect-video w-full object-cover" loading="lazy" />
-    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Fase Matchmaking — balik 2 kartu yang sama</figcaption>
+    <figcaption className="px-3 py-2 text-xs text-fd-muted-foreground text-center">Fase Pencocokan — balik 2 kartu yang sama</figcaption>
   </figure>
   <figure className="overflow-hidden rounded-xl border border-fd-border bg-fd-card">
     <img src="/window/playerResult.png" alt="Layar hasil player — peringkat dan skor akhir" className="aspect-video w-full object-cover" loading="lazy" />
