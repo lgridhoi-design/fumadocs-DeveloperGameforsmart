@@ -54,7 +54,7 @@ export function getCombinedPageTree(): Root {
 
   const developerFolder: Folder = {
     type: 'folder',
-    name: 'Developer',
+    name: 'Sisi Developer',
     defaultOpen: false,
     collapsible: true,
     children: docsTree.children,
@@ -62,7 +62,7 @@ export function getCombinedPageTree(): Root {
 
   const userFolder: Folder = {
     type: 'folder',
-    name: 'User',
+    name: 'Sisi User',
     defaultOpen: false,
     collapsible: true,
     children: userTree.children,
@@ -70,7 +70,7 @@ export function getCombinedPageTree(): Root {
 
   return {
     name: '',
-    children: [developerFolder, userFolder],
+    children: [userFolder, developerFolder],
   };
 }
 
